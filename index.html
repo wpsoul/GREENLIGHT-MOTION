@@ -422,6 +422,123 @@ a { color: var(--accent); text-decoration: none; }
   text-transform: uppercase;
   color: var(--dim);
 }
+.mouse-stage {
+  width: min(100%, 360px);
+  height: 220px;
+  border-radius: 16px;
+  border: 1px solid rgba(200,255,46,0.16);
+  background:
+    radial-gradient(circle at center, rgba(200,255,46,0.08), transparent 58%),
+    rgba(255,255,255,0.02);
+  position: relative;
+  overflow: hidden;
+}
+.mouse-stage-grid {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+.mouse-orb {
+  width: 92px;
+  height: 92px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  position: absolute;
+  left: calc(50% - 46px);
+  top: calc(50% - 46px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+}
+.mouse-stage-label {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.mouse-cursor-area {
+  width: min(100%, 420px);
+  min-height: 260px;
+  border-radius: 18px;
+  border: 1px solid rgba(200,255,46,0.16);
+  background:
+    radial-gradient(circle at center, rgba(26,255,198,0.08), transparent 52%),
+    rgba(255,255,255,0.02);
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+.mouse-cursor-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+.mouse-cursor-header strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+.mouse-cursor-header span {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.mouse-cursor-targets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.mouse-cursor-target {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  min-height: 82px;
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.mouse-cursor-template {
+  display: none;
+}
+.mouse-cursor-badge {
+  min-width: 88px;
+  height: 88px;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  background: rgba(10,10,12,0.9);
+  border: 1px solid rgba(200,255,46,0.4);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
 .drag-boundary {
   min-height: 240px;
   border: 1px dashed rgba(200,255,46,0.24);
@@ -460,6 +577,96 @@ a { color: var(--accent); text-decoration: none; }
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+/* ─── SLIDER ─────────────────────────────────── */
+.slider-demo {
+  width: min(100%, 900px);
+  display: grid;
+  gap: 1rem;
+}
+.slider-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.slider-toolbar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.slider-toolbar-copy strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.15rem;
+}
+.slider-toolbar-copy span {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.slider-arrows {
+  display: flex;
+  gap: 0.75rem;
+}
+.slider-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+.slider-viewport {
+  overflow: hidden;
+  border-radius: 16px;
+}
+.slider-track {
+  display: flex;
+  gap: 1rem;
+  will-change: transform;
+}
+.slider-slide {
+  min-height: 220px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)),
+    radial-gradient(circle at top right, rgba(200,255,46,0.12), transparent 45%);
+  padding: 1.5rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.slider-slide span {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.slider-slide strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.4rem;
+  line-height: 1.1;
+}
+.slider-slide p {
+  margin: 0;
+  color: var(--dim);
+  font-size: 0.85rem;
+  line-height: 1.7;
 }
 
 /* ─── MAGNETIC DEMO ─────────────────────────── */
@@ -633,6 +840,7 @@ a { color: var(--accent); text-decoration: none; }
 </style>
 </head>
 <body>
+<div id="page-content">
 
 <!-- ─── NAV ──────────────────────────────────── -->
 <nav class="nav">
@@ -1054,9 +1262,151 @@ a { color: var(--accent); text-decoration: none; }
 
 <div class="divider"></div>
 
+<!-- ─── MOUSE TRIGGER ────────────────────────── -->
+<section class="section">
+  <div class="section-label">06 — Mouse Trigger</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    Follow the cursor.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Use <code>data-glm-trigger-mouse</code> to map mouse movement to transform, scale,
+    opacity, and filter values. Add <code>data-glm-animate-once</code> to keep the last position instead of resetting.
+  </p>
+  <div class="demo-grid">
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7">
+      <div class="demo-card-label">Mouse</div>
+      <h3 class="demo-card-title">Reset On Idle</h3>
+      <p>Move inside the stage. When you stop or leave, the orb eases back to center.</p>
+      <div class="demo-area" style="height:260px;">
+        <div class="mouse-stage" id="mouse-reset-stage">
+          <div class="mouse-stage-grid"></div>
+          <div class="mouse-orb"
+               data-glm-trigger-mouse="#mouse-reset-stage"
+               data-glm-prop-translateX="36px"
+               data-glm-prop-translateY="30px"
+               data-glm-prop-rotate="10deg"
+               data-glm-prop-scale="1.18"></div>
+          <div class="mouse-stage-label">
+            <span>move mouse</span>
+            <span>returns to rest</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7"
+         data-glm-delay="0.1">
+      <div class="demo-card-label">Mouse</div>
+      <h3 class="demo-card-title">Sticky Position</h3>
+      <p>With <code>data-glm-animate-once</code>, the last mouse-driven state remains after you stop moving.</p>
+      <div class="demo-area" style="height:260px;">
+        <div class="mouse-stage" id="mouse-stick-stage">
+          <div class="mouse-stage-grid"></div>
+          <div class="mouse-orb"
+               data-glm-trigger-mouse="#mouse-stick-stage"
+               data-glm-animate-once
+               data-glm-prop-translateX="42px"
+               data-glm-prop-translateY="34px"
+               data-glm-prop-rotate="14deg"
+               data-glm-prop-scale="1.24"></div>
+          <div class="mouse-stage-label">
+            <span>move mouse</span>
+            <span>holds last state</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── MOUSE CURSOR ADDON ───────────────────── -->
+<section class="section">
+  <div class="section-label">07 — Mouse Cursor</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    Custom cursor objects.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Use <code>data-glm-mouse-object</code> to replace the cursor inside any region with a custom element.
+    Fade and scale appearance are optional, and hover targets can trigger an extra scale-up state.
+  </p>
+  <div class="demo-grid">
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7">
+      <div class="demo-card-label">Plugin</div>
+      <h3 class="demo-card-title">Cursor Region</h3>
+      <p>Move through the region to see the custom cursor, then hover the blocks to scale the cursor object even more.</p>
+      <div class="demo-area" style="height:auto; padding:1.5rem;">
+        <div class="mouse-cursor-area"
+             data-glm-mouse-object="#mouse-cursor-template"
+             data-glm-mouse-fade
+             data-glm-mouse-scale
+             data-glm-mouse-scale-object=".mouse-cursor-target">
+          <div class="mouse-cursor-header">
+            <strong>Hover the field</strong>
+            <span>custom cursor active</span>
+          </div>
+          <div class="mouse-cursor-targets">
+            <div class="mouse-cursor-target">Scale target</div>
+            <div class="mouse-cursor-target">Scale target</div>
+            <div class="mouse-cursor-target">Track motion</div>
+            <div class="mouse-cursor-target">Fade on enter</div>
+          </div>
+        </div>
+        <div class="mouse-cursor-template" id="mouse-cursor-template">
+          <div class="mouse-cursor-badge">Drag</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <!-- ─── MAGNETIC ──────────────────────────────── -->
 <section class="section">
-  <div class="section-label">06 — Magnetic Cursor</div>
+  <div class="section-label">08 — Magnetic Cursor</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="chars"
@@ -1078,9 +1428,18 @@ a { color: var(--accent); text-decoration: none; }
     the cursor on hover. Perfect for CTAs and interactive elements.
   </p>
   <div class="magnetic-area">
-    <div class="magnetic-btn" id="mag-1">Explore</div>
-    <div class="magnetic-btn" id="mag-2">Learn</div>
-    <div class="magnetic-btn" id="mag-3">Build</div>
+    <div class="magnetic-btn"
+         data-glm-magnetic
+         data-glm-magnetic-strength="0.35"
+         data-glm-magnetic-ease="0.08">Explore</div>
+    <div class="magnetic-btn"
+         data-glm-magnetic
+         data-glm-magnetic-strength="0.25"
+         data-glm-magnetic-ease="0.06">Learn</div>
+    <div class="magnetic-btn"
+         data-glm-magnetic
+         data-glm-magnetic-strength="0.4"
+         data-glm-magnetic-ease="0.1">Build</div>
   </div>
 </section>
 
@@ -1088,7 +1447,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── DRAGGABLE ─────────────────────────────── -->
 <section class="section">
-  <div class="section-label">07 — Draggable</div>
+  <div class="section-label">09 — Draggable</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1131,9 +1490,96 @@ a { color: var(--accent); text-decoration: none; }
 
 <div class="divider"></div>
 
+<!-- ─── SLIDER ───────────────────────────────── -->
+<section class="section">
+  <div class="section-label">10 — Slider</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    Carousel with drag.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Configure rows per device, attach any blocks as arrow controllers,
+    enable loop mode, and choose whether slides snap after drag inertia.
+  </p>
+  <div class="demo-area" style="height:auto; padding:2rem;">
+    <div class="slider-demo"
+         data-glm-slider
+         data-glm-slider-row="3"
+         data-glm-slider-row-tablet="2"
+         data-glm-slider-row-mobile="1"
+         data-glm-slider-speed="0.8"
+         data-glm-slider-snap-speed="1"
+         data-glm-slider-scroll="1"
+         data-glm-slider-scrollsnap="1"
+         data-glm-slider-left-arrow=".slider-demo-left"
+         data-glm-slider-right-arrow=".slider-demo-right"
+         data-glm-slider-loop
+         data-glm-slider-snap>
+      <div class="slider-toolbar">
+        <div class="slider-toolbar-copy">
+          <strong>GLM Slider Demo</strong>
+          <span>drag, flick, snap, loop</span>
+        </div>
+        <div class="slider-arrows">
+          <div class="slider-arrow slider-demo-left">←</div>
+          <div class="slider-arrow slider-demo-right">→</div>
+        </div>
+      </div>
+      <div class="slider-viewport" data-glm-slider-viewport>
+        <div class="slider-track" data-glm-slider-track>
+          <article class="slider-slide">
+            <span>01 / Motion</span>
+            <strong>Snap to the nearest slide.</strong>
+            <p>Release the track and it settles onto the closest page with smooth easing.</p>
+          </article>
+          <article class="slider-slide">
+            <span>02 / Control</span>
+            <strong>Any block can drive the carousel.</strong>
+            <p>Use selector-based arrows so your own UI elements become slider controls.</p>
+          </article>
+          <article class="slider-slide">
+            <span>03 / Devices</span>
+            <strong>Responsive rows by attribute.</strong>
+            <p>Desktop shows three items, tablet two, mobile one with the same markup.</p>
+          </article>
+          <article class="slider-slide">
+            <span>04 / Inertia</span>
+            <strong>Drag with momentum.</strong>
+            <p>Flick the track and inertia keeps it moving before the snap resolves.</p>
+          </article>
+          <article class="slider-slide">
+            <span>05 / Loop</span>
+            <strong>Wrap to the start again.</strong>
+            <p>Arrow navigation can move one item at a time with its own slower speed profile.</p>
+          </article>
+          <article class="slider-slide">
+            <span>06 / Build</span>
+            <strong>Pair it with your GLM addons.</strong>
+            <p>Use it alongside draggable and easing-driven UI patterns in the same system.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <!-- ─── EASINGS ──────────────────────────────── -->
 <section class="section" id="easings">
-  <div class="section-label">08 — Easing Library</div>
+  <div class="section-label">11 — Easing Library</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1162,7 +1608,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── INERTIA ──────────────────────────────── -->
 <section class="section">
-  <div class="section-label">09 — Inertia</div>
+  <div class="section-label">12 — Inertia</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="chars"
@@ -1199,7 +1645,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── DATA ATTRIBUTES REFERENCE ─────────────── -->
 <section class="section" id="data-attrs">
-  <div class="section-label">10 — Data Attributes</div>
+  <div class="section-label">13 — Data Attributes</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1284,6 +1730,45 @@ a { color: var(--accent); text-decoration: none; }
   &gt;
 &lt;/div&gt;
 
+<span class="cm">&lt;!-- Slider with responsive rows and controller selectors --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-slider</span>
+  <span class="kw">data-glm-slider-row</span>=<span class="str">"3"</span>
+  <span class="kw">data-glm-slider-row-tablet</span>=<span class="str">"2"</span>
+  <span class="kw">data-glm-slider-row-mobile</span>=<span class="str">"1"</span>
+  <span class="kw">data-glm-slider-speed</span>=<span class="str">"0.8"</span>
+  <span class="kw">data-glm-slider-snap-speed</span>=<span class="str">"1"</span>
+  <span class="kw">data-glm-slider-scroll</span>=<span class="str">"1"</span>
+  <span class="kw">data-glm-slider-scrollsnap</span>=<span class="str">"1"</span>
+  <span class="kw">data-glm-slider-left-arrow</span>=<span class="str">".leftarrow"</span>
+  <span class="kw">data-glm-slider-right-arrow</span>=<span class="str">".rightarrow"</span>
+  <span class="kw">data-glm-slider-loop</span>
+  <span class="kw">data-glm-slider-snap</span>
+&gt;
+
+<span class="cm">&lt;!-- Mouse trigger area --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-mouse</span>=<span class="str">".mouse-area"</span>
+  <span class="kw">data-glm-prop-translateX</span>=<span class="str">"36px"</span>
+  <span class="kw">data-glm-prop-translateY</span>=<span class="str">"24px"</span>
+  <span class="kw">data-glm-prop-scale</span>=<span class="str">"1.15"</span>
+&gt;
+
+<span class="cm">&lt;!-- Magnetic button --&gt;</span>
+&lt;button
+  <span class="kw">data-glm-magnetic</span>
+  <span class="kw">data-glm-magnetic-strength</span>=<span class="str">"0.35"</span>
+  <span class="kw">data-glm-magnetic-ease</span>=<span class="str">"0.08"</span>
+&gt;
+
+<span class="cm">&lt;!-- Custom cursor region --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-mouse-object</span>=<span class="str">".cursor-template"</span>
+  <span class="kw">data-glm-mouse-fade</span>
+  <span class="kw">data-glm-mouse-scale</span>
+  <span class="kw">data-glm-mouse-scale-object</span>=<span class="str">".cursor-target"</span>
+&gt;
+
 <span class="cm">&lt;!-- Click trigger on external element --&gt;</span>
 &lt;div
   <span class="kw">data-glm-trigger-click</span>=<span class="str">"#my-button"</span>
@@ -1304,7 +1789,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── API OVERVIEW ──────────────────────────── -->
 <section class="section" id="api">
-  <div class="section-label">11 — JavaScript API</div>
+  <div class="section-label">14 — JavaScript API</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1415,6 +1900,16 @@ a { color: var(--accent); text-decoration: none; }
       <h4>GLM.draggable()</h4>
       <p>Drag elements freely or constrain them inside a boundary element via selector.</p>
     </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.9">
+      <h4>GLM.slider()</h4>
+      <p>Responsive carousels with drag inertia, snapping, looping, and external arrow controls.</p>
+    </div>
   </div>
 
   <div class="code-block" style="margin-top:3rem"
@@ -1456,6 +1951,21 @@ tl.<span class="kw">to</span>(<span class="str">'.hero'</span>, { opacity: <span
 <span class="fn">GLM</span>.<span class="kw">draggable</span>(<span class="str">'.card'</span>, {
   boundary: <span class="str">'.canvas'</span>
 });
+
+<span class="cm">// Slider</span>
+<span class="fn">GLM</span>.<span class="kw">slider</span>(<span class="str">'.carousel'</span>, {
+  perRow: <span class="str">3</span>,
+  perRowTablet: <span class="str">2</span>,
+  perRowMobile: <span class="str">1</span>,
+  speed: <span class="str">0.8</span>,
+  snapSpeed: <span class="str">1</span>,
+  scroll: <span class="str">1</span>,
+  scrollSnap: <span class="str">1</span>,
+  leftArrow: <span class="str">'.leftarrow'</span>,
+  rightArrow: <span class="str">'.rightarrow'</span>,
+  loop: <span class="kw">true</span>,
+  snap: <span class="kw">true</span>
+});
   </div>
 </section>
 
@@ -1463,7 +1973,7 @@ tl.<span class="kw">to</span>(<span class="str">'.hero'</span>, { opacity: <span
 
 <!-- ─── SMOOTH SCROLL ─────────────────────────── -->
 <section class="section">
-  <div class="section-label">12 — Smooth Scroll</div>
+  <div class="section-label">15 — Smooth Scroll</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1548,18 +2058,17 @@ smooth.<span class="kw">kill</span>();
 <footer class="footer">
   <strong>GLM</strong> — Greenlight Motion v1.0.0 — Zero dependencies, maximum performance.
 </footer>
+</div>
 
 <!-- ─── FRAMEWORK ─────────────────────────────── -->
 <script src="glm.js"></script>
-<script src="glm-graggable.js"></script>
+<script src="glm-draggable.js"></script>
+<script src="glm-slider.js"></script>
+<script src="glm-mouse.js"></script>
 <script src="glm-magnetic.js"></script>
 <script>
 (function () {
-
-  // ─── MAGNETIC BUTTONS ─────────────────────
-  GLM.magnetic('#mag-1', { strength: 0.35, ease: 0.08 });
-  GLM.magnetic('#mag-2', { strength: 0.25, ease: 0.06 });
-  GLM.magnetic('#mag-3', { strength: 0.4, ease: 0.1 });
+  GLM.smoothScroll({ content: '#page-content', lerp: 0.08 });
 
   // ─── EASING SHOWCASE ──────────────────────
   const easingNames = [

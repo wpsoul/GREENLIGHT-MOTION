@@ -827,6 +827,104 @@
     return end;
   }
 
+  function _mouseFactorForProp(prop, nx, ny) {
+    const magnitude = Math.min(Math.sqrt(nx * nx + ny * ny), 1);
+    if (prop === 'translateX' || prop === 'rotateY' || prop === 'skewX') return nx;
+    if (prop === 'translateY' || prop === 'rotateX' || prop === 'skewY') return ny;
+    if (prop === 'rotate' || prop === 'rotateZ') return nx;
+    if (prop === 'translateZ' || SCALE_PROPS.has(prop) || prop === 'opacity' || prop.startsWith(FILTER_PREFIX)) return magnitude;
+    return magnitude;
+  }
+
+  function _initMouseTrigger(targets, props, triggerEl, opts = {}) {
+    const follow = opts.animateOnce || false;
+    const moveEase = 0.18;
+    const idleResetMs = 320;
+    let rafId = null;
+    let idleTimer = null;
+    let currentX = 0, currentY = 0;
+    let targetX = 0, targetY = 0;
+
+    const defs = targets.map(target => Object.entries(props).map(([rawProp, rawValue]) => {
+      const prop = normalizePropName(rawProp);
+      const current = _getCurrentPropState(target, prop);
+      if (prop === CLIP_PATH_PROP || typeof parseValue(rawValue).value !== 'number') return null;
+      const parsed = parseValue(rawValue);
+      return {
+        prop,
+        base: current.value,
+        to: parsed.value,
+        unit: parsed.unit || current.unit || UNIT_DEFAULTS[prop] || '',
+      };
+    }).filter(Boolean));
+
+    const clearIdleReset = () => {
+      if (idleTimer) {
+        clearTimeout(idleTimer);
+        idleTimer = null;
+      }
+    };
+
+    const requestReset = () => {
+      if (follow) return;
+      clearIdleReset();
+      idleTimer = setTimeout(() => {
+        targetX = 0;
+        targetY = 0;
+        requestFrame();
+      }, idleResetMs);
+    };
+
+    const step = () => {
+      currentX += (targetX - currentX) * moveEase;
+      currentY += (targetY - currentY) * moveEase;
+
+      targets.forEach((target, index) => {
+        defs[index].forEach(def => {
+          const factor = _mouseFactorForProp(def.prop, currentX, currentY);
+          const next = def.base + (def.to - def.base) * factor;
+          _setProp(target, def.prop, next, def.unit);
+        });
+        _flushEl(target);
+      });
+
+      if (Math.abs(targetX - currentX) > 0.001 || Math.abs(targetY - currentY) > 0.001) {
+        rafId = requestAnimationFrame(step);
+      } else {
+        currentX = targetX;
+        currentY = targetY;
+        rafId = null;
+      }
+    };
+
+    const requestFrame = () => {
+      if (!rafId) rafId = requestAnimationFrame(step);
+    };
+
+    const onMove = e => {
+      const rect = triggerEl.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const px = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const py = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+      targetX = clamp(px, -1, 1);
+      targetY = clamp(py, -1, 1);
+      clearIdleReset();
+      requestFrame();
+      requestReset();
+    };
+
+    const onLeave = () => {
+      clearIdleReset();
+      if (follow) return;
+      targetX = 0;
+      targetY = 0;
+      requestFrame();
+    };
+
+    triggerEl.addEventListener('mousemove', onMove);
+    triggerEl.addEventListener('mouseleave', onLeave);
+  }
+
   function _parse(el) {
     const a = el.attributes, p = {};
     let trigger = null, triggerTarget = null, easing = null, dur = null, delay = null;
@@ -842,6 +940,7 @@
       else if (n === 'data-glm-trigger-scroll')    { trigger = 'scroll'; if (v) triggerTarget = v; }
       else if (n === 'data-glm-trigger-click')     { trigger = 'click'; if (v) triggerTarget = v; }
       else if (n === 'data-glm-trigger-hover')     { trigger = 'hover'; if (v) triggerTarget = v; }
+      else if (n === 'data-glm-trigger-mouse')     { trigger = 'mouse'; if (v) triggerTarget = v; }
       else if (n === 'data-glm-easing')            easing = v;
       else if (n === 'data-glm-duration')          dur = parseFloat(v);
       else if (n === 'data-glm-delay')             delay = parseFloat(v);
@@ -867,7 +966,7 @@
   }
 
   function _initFromAttributes() {
-    const sel = '[data-glm-trigger-view],[data-glm-trigger-scroll],[data-glm-trigger-click],[data-glm-trigger-hover],[data-glm-split]';
+    const sel = '[data-glm-trigger-view],[data-glm-trigger-scroll],[data-glm-trigger-click],[data-glm-trigger-hover],[data-glm-trigger-mouse],[data-glm-split]';
     const all = document.querySelectorAll(sel);
     const done = new Set();
 
@@ -881,7 +980,7 @@
               scrubStart, scrubEnd, repeat, yoyo, threshold, animateOnce } = d;
 
       const isReveal = trigger === 'view' || trigger === 'scroll';
-      const isInteractive = trigger === 'hover' || trigger === 'click';
+      const isInteractive = trigger === 'hover' || trigger === 'click' || trigger === 'mouse';
       const rootMargin = _rm(threshold);
 
       // TEXT SPLIT
@@ -967,6 +1066,8 @@
             stagger: stagger ? staggerDelay : 0,
           });
           (tEl || el).addEventListener('click', () => tw.restart());
+        } else if (trigger === 'mouse') {
+          _initMouseTrigger(targets, p, tEl || el, { animateOnce });
         } else {
           const initialStates = targets.map(target => _snapshotProps(target, p));
           let activeTweens = [];
