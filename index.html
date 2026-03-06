@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLM — Greenlight Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Sora:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root {
+  --bg: #0a0a0b;
+  --fg: #e8e6e1;
+  --accent: #c8ff2e;
+  --accent2: #1affc6;
+  --dim: #555550;
+  --card: #131315;
+  --border: #222224;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Sora', system-ui, sans-serif;
+  --font-mono: 'DM Mono', 'Fira Code', monospace;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html { scroll-behavior: auto; font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+::selection { background: var(--accent); color: var(--bg); }
+
+/* ─── NAV ──────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.25rem 2.5rem;
+  background: rgba(10,10,11,0.7);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.nav-links { display: flex; gap: 2rem; }
+.nav-links a {
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  color: var(--dim);
+  transition: color 0.3s;
+  text-transform: uppercase;
+}
+.nav-links a:hover { color: var(--fg); }
+.nav-badge {
+  font-size: 0.65rem;
+  padding: 0.2em 0.6em;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+/* ─── HERO ──────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 8rem 2rem 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(200,255,46,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 30% 70%, rgba(26,255,198,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 2rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 12vw, 10rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.hero-title .accent { color: var(--accent); }
+.hero-title em {
+  font-style: italic;
+  color: var(--accent2);
+}
+.hero-sub {
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--dim);
+  max-width: 500px;
+  margin: 1.5rem auto 3rem;
+  font-weight: 300;
+  line-height: 1.7;
+}
+.hero-stats {
+  display: flex;
+  gap: 4rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.hero-stats strong {
+  display: block;
+  font-size: 1.5rem;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
+}
+.hero-grid-line {
+  position: absolute;
+  background: var(--border);
+  opacity: 0.3;
+}
+.hero-grid-line.v { width: 1px; top: 0; bottom: 0; }
+.hero-grid-line.h { height: 1px; left: 0; right: 0; }
+
+/* ─── SECTIONS ──────────────────────────────── */
+.section {
+  padding: 8rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.section-label::before {
+  content: '';
+  width: 2rem;
+  height: 1px;
+  background: var(--accent);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+.section-desc {
+  color: var(--dim);
+  max-width: 550px;
+  font-weight: 300;
+  line-height: 1.8;
+  margin-bottom: 4rem;
+}
+
+/* ─── DEMO BOXES ────────────────────────────── */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+.demo-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.4s;
+}
+.demo-card:hover { border-color: var(--accent); }
+.demo-card-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1.25rem;
+}
+.demo-card-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+.demo-card p {
+  color: var(--dim);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+/* demo shapes */
+.demo-area {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  overflow: hidden;
+  position: relative;
+}
+.box {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--accent);
+}
+.box.teal { background: var(--accent2); }
+.box.sm { width: 36px; height: 36px; border-radius: 6px; }
+.clip-demo {
+  width: min(100%, 280px);
+  height: 120px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  overflow: hidden;
+  position: relative;
+}
+.clip-demo-fill {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 1rem;
+  background:
+    linear-gradient(135deg, rgba(200,255,46,0.95), rgba(26,255,198,0.95)),
+    radial-gradient(circle at top right, rgba(255,255,255,0.35), transparent 55%);
+  color: #0a0a0c;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: -0.03em;
+  box-sizing: border-box;
+}
+
+/* stagger children */
+.stagger-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+.stagger-row .box { opacity: 0; }
+
+/* ─── CODE BLOCKS ───────────────────────────── */
+.code-block {
+  background: #0d0d0f;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: var(--dim);
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+.code-block .kw { color: #c8ff2e; }
+.code-block .str { color: #1affc6; }
+.code-block .fn { color: #e8e6e1; }
+.code-block .cm { color: #3a3a3c; }
+
+/* ─── TEXT REVEAL SECTION ───────────────────── */
+.text-reveal-area {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.2;
+  max-width: 800px;
+}
+.text-reveal-area .glm-char,
+.text-reveal-area .glm-word,
+.text-reveal-area .glm-line { will-change: transform, opacity; }
+.masked-text-demo {
+  margin-top: 3rem;
+  max-width: 820px;
+}
+.masked-text-demo .text-reveal-area + .text-reveal-area {
+  margin-top: 1.5rem;
+}
+.text-note {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+/* ─── SCROLL SECTION ────────────────────────── */
+.scroll-demo {
+  height: 70vh;
+  position: relative;
+}
+.scroll-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 2rem 0;
+}
+.scroll-box {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+}
+.smooth-stack {
+  width: min(100%, 460px);
+  display: grid;
+  gap: 0.75rem;
+}
+.smooth-layer {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.smooth-layer strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.1rem;
+}
+.smooth-layer span {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ─── PARALLAX SECTION ──────────────────────── */
+.parallax-section {
+  padding: 10rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.parallax-shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.parallax-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.1;
+}
+.ps-1 { width: 300px; height: 300px; background: var(--accent); top: 10%; left: 10%; }
+.ps-2 { width: 200px; height: 200px; background: var(--accent2); top: 40%; right: 15%; }
+.ps-3 { width: 150px; height: 150px; background: var(--fg); bottom: 10%; left: 30%; }
+
+/* ─── HOVER / CLICK DEMOS ───────────────────── */
+.interactive-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+.hover-box {
+  height: 220px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.hover-box:hover { border-color: rgba(200,255,46,0.3); }
+.hover-box .inner-box {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+}
+.hover-label {
+  position: absolute;
+  bottom: 1rem;
+  left: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ─── MAGNETIC DEMO ─────────────────────────── */
+.magnetic-area {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  padding: 4rem 0;
+}
+.magnetic-btn {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 0.3s;
+  background: var(--card);
+}
+.magnetic-btn:hover { border-color: var(--accent); }
+
+/* ─── EASING SHOWCASE ───────────────────────── */
+.easing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.easing-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+.easing-item:hover { border-color: var(--accent); }
+.easing-name {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+.easing-track {
+  height: 3px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  position: relative;
+  overflow: visible;
+}
+.easing-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  position: absolute;
+  top: 50%;
+  transform: translate(0, -50%);
+  left: 0;
+}
+
+/* ─── INERTIA DEMO ──────────────────────────── */
+.inertia-area {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.inertia-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  cursor: grab;
+}
+
+/* ─── DATA ATTR DEMO ────────────────────────── */
+.attr-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 3rem 0;
+}
+.attr-row {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+.attr-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  white-space: nowrap;
+  min-width: 280px;
+  letter-spacing: 0.02em;
+}
+.attr-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.attr-box.teal { background: var(--accent2); }
+
+/* ─── API SECTION ───────────────────────────── */
+.api-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.api-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2rem;
+  transition: border-color 0.4s;
+}
+.api-card:hover { border-color: var(--accent); }
+.api-card h4 {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.api-card p {
+  font-size: 0.82rem;
+  color: var(--dim);
+  line-height: 1.7;
+}
+
+/* ─── FOOTER ────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 4rem 2rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+}
+.footer strong { color: var(--accent); font-weight: 500; }
+
+/* ─── DIVIDER ───────────────────────────────── */
+.divider {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── RESPONSIVE ────────────────────────────── */
+@media (max-width: 768px) {
+  .nav { padding: 1rem 1.5rem; }
+  .nav-links { display: none; }
+  .hero-stats { gap: 2rem; }
+  .interactive-grid { grid-template-columns: 1fr; }
+  .section { padding: 5rem 1.5rem; }
+  .demo-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ──────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-logo">GLM</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#data-attrs">Data Attrs</a>
+    <a href="#easings">Easings</a>
+    <a href="#api">API</a>
+  </div>
+  <span class="nav-badge">v1.0</span>
+</nav>
+
+<!-- ─── HERO ──────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-grid-line v" style="left:20%"></div>
+  <div class="hero-grid-line v" style="left:40%"></div>
+  <div class="hero-grid-line v" style="left:60%"></div>
+  <div class="hero-grid-line v" style="left:80%"></div>
+  <div class="hero-grid-line h" style="top:25%"></div>
+  <div class="hero-grid-line h" style="top:75%"></div>
+
+  <p class="hero-eyebrow" id="hero-eyebrow"
+     data-glm-trigger-view
+     data-glm-animate-once
+     data-glm-prop-opacity="0"
+     data-glm-prop-translateY="20px"
+     data-glm-duration="0.6"
+     data-glm-delay="0.1">
+    Tiny animation engine
+  </p>
+  <h1 class="hero-title" id="hero-title"
+      data-glm-trigger-view
+      data-glm-animate-once
+      data-glm-prop-opacity="0"
+      data-glm-prop-translateY="60px"
+      data-glm-easing="power3.out"
+      data-glm-duration="1.2"
+      data-glm-delay="0.2">
+    Green<span class="accent">light</span><br><em>Motion</em>
+  </h1>
+  <p class="hero-sub" id="hero-sub"
+     data-glm-trigger-view
+     data-glm-animate-once
+     data-glm-prop-opacity="0"
+     data-glm-prop-translateY="30px"
+     data-glm-duration="0.8"
+     data-glm-delay="0.5">
+    A featherweight alternative to GSAP. Data-attribute driven. 
+    Scroll-scrub. Text split. Stagger. Inertia. Zero dependencies.
+  </p>
+  <div class="hero-stats" id="hero-stats"
+       data-glm-trigger-view
+       data-glm-animate-once
+       data-glm-prop-opacity="0"
+       data-glm-prop-translateY="20px"
+       data-glm-duration="0.6"
+       data-glm-delay="0.7">
+    <div><strong>~4kb</strong> gzipped</div>
+    <div><strong>0</strong> dependencies</div>
+    <div><strong>60fps</strong> performance</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── FEATURE DEMOS ────────────────────────── -->
+<section class="section" id="features">
+  <div class="section-label">01 — Core Animations</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="chars"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.9"
+      data-glm-stagger-delay="0.03">
+    Animate anything.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    GLM.to(), data attributes, or both. Transforms, filters, 
+    opacity — everything is batched into a single rAF for peak performance.
+  </p>
+
+  <div class="demo-grid">
+    <!-- TRANSLATE -->
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7">
+      <div class="demo-card-label">Transform</div>
+      <h3 class="demo-card-title">Translate Y</h3>
+      <p>Smooth vertical translation with easing</p>
+      <div class="demo-area">
+        <div class="box"
+             data-glm-trigger-view
+             data-glm-prop-translateY="60px"
+             data-glm-prop-opacity="0"
+             data-glm-easing="back.out"
+             data-glm-duration="1">
+        </div>
+      </div>
+    </div>
+
+    <!-- ROTATE + SCALE -->
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7"
+         data-glm-delay="0.1">
+      <div class="demo-card-label">Transform</div>
+      <h3 class="demo-card-title">Rotate & Scale</h3>
+      <p>Combined rotation with scale spring</p>
+      <div class="demo-area">
+        <div class="box teal"
+             data-glm-trigger-view
+             data-glm-prop-rotate="180deg"
+             data-glm-prop-scale="1.4"
+             data-glm-easing="elastic.out"
+             data-glm-duration="1.5">
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGGER -->
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7"
+         data-glm-delay="0.2">
+      <div class="demo-card-label">Stagger</div>
+      <h3 class="demo-card-title">Stagger Children</h3>
+      <p>Cascade through child elements with delay</p>
+      <div class="demo-area">
+        <div class="stagger-row"
+             data-glm-trigger-view
+             data-glm-stagger
+             data-glm-stagger-delay="0.08"
+             data-glm-prop-translateY="30px"
+             data-glm-prop-opacity="0"
+             data-glm-easing="back.out"
+             data-glm-duration="0.6">
+          <div class="box sm"></div>
+          <div class="box sm teal"></div>
+          <div class="box sm"></div>
+          <div class="box sm teal"></div>
+          <div class="box sm"></div>
+          <div class="box sm teal"></div>
+          <div class="box sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BLUR -->
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7"
+         data-glm-delay="0.3">
+      <div class="demo-card-label">Filter</div>
+      <h3 class="demo-card-title">Blur Filter</h3>
+      <p>Animate CSS filter-blur with data attributes</p>
+      <div class="demo-area">
+        <div class="box"
+             data-glm-trigger-view
+             data-glm-prop-filter-blur="20px"
+             data-glm-prop-opacity="0"
+             data-glm-easing="power3.out"
+             data-glm-duration="1.2">
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIP PATH -->
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7"
+         data-glm-delay="0.4">
+      <div class="demo-card-label">Clip Path</div>
+      <h3 class="demo-card-title">Masked Reveal</h3>
+      <p>Animate <code>data-glm-prop-clippath</code> with inset-based reveals.</p>
+      <div class="demo-area">
+        <div class="clip-demo"
+             data-glm-trigger-view
+             data-glm-prop-clippath="inset(0% 100% 0% 0%)"
+             data-glm-easing="power3.out"
+             data-glm-duration="1">
+          <div class="clip-demo-fill">Reveal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── TEXT SPLIT ────────────────────────────── -->
+<section class="section">
+  <div class="section-label">02 — Text Split</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="chars"
+      data-glm-prop-translateY="50px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.025">
+    Split & reveal text.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Split text into characters, words, or lines. 
+    Combine with stagger for fluid reveal animations.
+  </p>
+
+  <div class="text-reveal-area"
+       data-glm-trigger-view
+       data-glm-split="words"
+       data-glm-prop-translateY="60px"
+       data-glm-prop-opacity="0"
+       data-glm-easing="power3.out"
+       data-glm-duration="1"
+       data-glm-stagger-delay="0.06">
+    Design is intelligence made visible — every pixel, every frame, every transition.
+  </div>
+
+  <div class="masked-text-demo">
+    <div class="text-note">Masked split example</div>
+    <div class="text-reveal-area"
+         data-glm-trigger-view
+         data-glm-split="chars"
+         data-glm-mask
+         data-glm-prop-translateY="110%"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power3.out"
+         data-glm-duration="0.95"
+         data-glm-stagger-delay="0.018">
+      Hidden outside the parent until every character slides into place.
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── SCROLL SCRUB ──────────────────────────── -->
+<section class="section">
+  <div class="section-label">03 — Scroll Scrub</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="chars"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.02">
+    Scroll-linked motion.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Tie animation progress directly to scroll position.
+    Scrub forward and backward with sub-pixel precision, without pinning the block in place.
+  </p>
+</section>
+
+<section class="scroll-demo" id="scroll-demo">
+  <div class="scroll-track">
+    <div class="scroll-box"
+         data-glm-trigger-scroll
+         data-glm-prop-rotate="720deg"
+         data-glm-prop-scale="0.3"
+         data-glm-prop-filter-blur="10px"
+         data-glm-scrub-start="top 80%"
+         data-glm-scrub-end="bottom 20%">
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── PARALLAX ──────────────────────────────── -->
+<section class="parallax-section">
+  <div class="parallax-shapes">
+    <div class="parallax-shape ps-1" id="ps-1"
+         data-glm-trigger-scroll=".parallax-section"
+         data-glm-prop-translateY="160px"
+         data-glm-scrub-start="top bottom"
+         data-glm-scrub-end="bottom top"></div>
+    <div class="parallax-shape ps-2" id="ps-2"
+         data-glm-trigger-scroll=".parallax-section"
+         data-glm-prop-translateY="-100px"
+         data-glm-scrub-start="top bottom"
+         data-glm-scrub-end="bottom top"></div>
+    <div class="parallax-shape ps-3" id="ps-3"
+         data-glm-trigger-scroll=".parallax-section"
+         data-glm-prop-translateY="220px"
+         data-glm-scrub-start="top bottom"
+         data-glm-scrub-end="bottom top"></div>
+  </div>
+  <div class="section" style="position:relative">
+    <div class="section-label">04 — Scroll Trigger Depth</div>
+    <h2 class="section-title"
+        data-glm-trigger-view
+        data-glm-split="words"
+        data-glm-prop-translateY="50px"
+        data-glm-prop-opacity="0"
+        data-glm-easing="power3.out"
+        data-glm-duration="0.9"
+        data-glm-stagger-delay="0.05">
+      Depth through motion.
+    </h2>
+    <p class="section-desc"
+       data-glm-trigger-view
+       data-glm-prop-translateY="30px"
+       data-glm-prop-opacity="0"
+       data-glm-easing="power2.out"
+       data-glm-duration="0.8"
+       data-glm-delay="0.3">
+      Depth layers driven entirely by scroll trigger attributes.
+      Each shape scrubs at a different offset without a dedicated parallax helper.
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── INTERACTIVE: HOVER + CLICK ────────────── -->
+<section class="section">
+  <div class="section-label">05 — Interactive Triggers</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="chars"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.02">
+    Hover. Click. React.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Attach animations to hover and click events with data attributes. 
+    Target other elements using CSS selectors.
+  </p>
+
+  <div class="interactive-grid">
+    <div class="hover-box"
+         data-glm-trigger-hover
+         data-glm-prop-scale="1.08"
+         data-glm-prop-rotate="3deg"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.4">
+      <div class="inner-box" style="background: var(--accent); border-radius: 12px;"></div>
+      <span class="hover-label">Hover → scale + rotate</span>
+    </div>
+
+    <div class="hover-box" id="click-demo"
+         data-glm-trigger-click
+         data-glm-prop-rotate="360deg"
+         data-glm-prop-scale="1.2"
+         data-glm-easing="elastic.out"
+         data-glm-duration="1">
+      <div class="inner-box" style="background: var(--accent2); border-radius: 12px;"></div>
+      <span class="hover-label">Click → elastic spin</span>
+    </div>
+
+    <div class="hover-box"
+         data-glm-trigger-hover
+         data-glm-prop-filter-blur="8px"
+         data-glm-prop-scale="0.95"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.5">
+      <div class="inner-box" style="background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px;"></div>
+      <span class="hover-label">Hover → blur + shrink</span>
+    </div>
+
+    <div class="hover-box"
+         data-glm-trigger-hover
+         data-glm-prop-translateY="-10px"
+         data-glm-prop-opacity="0.6"
+         data-glm-easing="back.out"
+         data-glm-duration="0.5">
+      <div class="inner-box" style="background: var(--accent); border-radius: 50%;"></div>
+      <span class="hover-label">Hover → lift + fade</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── MAGNETIC ──────────────────────────────── -->
+<section class="section">
+  <div class="section-label">06 — Magnetic Cursor</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="chars"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.02">
+    Elements that follow.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Magnetic effect — elements subtly gravitate toward 
+    the cursor on hover. Perfect for CTAs and interactive elements.
+  </p>
+  <div class="magnetic-area">
+    <div class="magnetic-btn" id="mag-1">Explore</div>
+    <div class="magnetic-btn" id="mag-2">Learn</div>
+    <div class="magnetic-btn" id="mag-3">Build</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── EASINGS ──────────────────────────────── -->
+<section class="section" id="easings">
+  <div class="section-label">07 — Easing Library</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    GSAP-grade easings.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    All the classics: power1–4, back, elastic, bounce, 
+    circ, expo, sine — plus custom cubic-bezier and steps. 
+    Click any easing to preview.
+  </p>
+  <div class="easing-grid" id="easing-grid"></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── INERTIA ──────────────────────────────── -->
+<section class="section">
+  <div class="section-label">08 — Inertia</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="chars"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.02">
+    Momentum that feels real.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Add data-glm-inertia to carry velocity past the animation endpoint. 
+    Natural deceleration with configurable decay.
+  </p>
+  <div class="demo-area" style="height:250px; margin-top:2rem;">
+    <div class="box" style="width:80px;height:80px;border-radius:50%"
+         data-glm-trigger-click
+         data-glm-prop-translateX="200px"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.5"
+         data-glm-inertia="0.88">
+    </div>
+  </div>
+  <p style="text-align:center; color:var(--dim); font-family:var(--font-mono); font-size:0.7rem; margin-top:1rem; letter-spacing:0.05em;">CLICK THE CIRCLE — WATCH THE INERTIA OVERSHOOT</p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── DATA ATTRIBUTES REFERENCE ─────────────── -->
+<section class="section" id="data-attrs">
+  <div class="section-label">09 — Data Attributes</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    Zero JavaScript required.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Add data attributes to any HTML element.
+    GLM auto-inits the animation engine on page load.
+  </p>
+
+  <div class="code-block"
+       data-glm-trigger-view
+       data-glm-prop-translateY="20px"
+       data-glm-prop-opacity="0"
+       data-glm-easing="power2.out"
+       data-glm-duration="0.6">
+<span class="cm">&lt;!-- Fade-in on scroll into view --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-view</span>
+  <span class="kw">data-glm-prop-translateY</span>=<span class="str">"50px"</span>
+  <span class="kw">data-glm-prop-opacity</span>=<span class="str">"0"</span>
+  <span class="kw">data-glm-easing</span>=<span class="str">"power3.out"</span>
+  <span class="kw">data-glm-duration</span>=<span class="str">"0.8"</span>
+&gt;
+
+<span class="cm">&lt;!-- Scroll-scrub with blur filter --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-scroll</span>
+  <span class="kw">data-glm-prop-filter-blur</span>=<span class="str">"20px"</span>
+  <span class="kw">data-glm-prop-translateY</span>=<span class="str">"100px"</span>
+&gt;
+
+<span class="cm">&lt;!-- Stagger children on view --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-view</span>
+  <span class="kw">data-glm-stagger</span>
+  <span class="kw">data-glm-stagger-delay</span>=<span class="str">"0.1"</span>
+  <span class="kw">data-glm-prop-translateY</span>=<span class="str">"30px"</span>
+  <span class="kw">data-glm-prop-opacity</span>=<span class="str">"0"</span>
+&gt;
+
+<span class="cm">&lt;!-- Text split with char stagger --&gt;</span>
+&lt;h2
+  <span class="kw">data-glm-split</span>=<span class="str">"chars"</span>
+  <span class="kw">data-glm-prop-translateY</span>=<span class="str">"40px"</span>
+  <span class="kw">data-glm-prop-opacity</span>=<span class="str">"0"</span>
+  <span class="kw">data-glm-stagger-delay</span>=<span class="str">"0.03"</span>
+&gt;
+
+<span class="cm">&lt;!-- Masked text split reveal --&gt;</span>
+&lt;h2
+  <span class="kw">data-glm-split</span>=<span class="str">"chars"</span>
+  <span class="kw">data-glm-mask</span>
+  <span class="kw">data-glm-prop-translateY</span>=<span class="str">"110%"</span>
+  <span class="kw">data-glm-prop-opacity</span>=<span class="str">"0"</span>
+  <span class="kw">data-glm-stagger-delay</span>=<span class="str">"0.02"</span>
+&gt;
+
+<span class="cm">&lt;!-- Clip-path reveal --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-view</span>
+  <span class="kw">data-glm-prop-clippath</span>=<span class="str">"inset(0% 100% 0% 0%)"</span>
+  <span class="kw">data-glm-easing</span>=<span class="str">"power3.out"</span>
+  <span class="kw">data-glm-duration</span>=<span class="str">"1"</span>
+&gt;
+
+<span class="cm">&lt;!-- Click trigger on external element --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-click</span>=<span class="str">"#my-button"</span>
+  <span class="kw">data-glm-prop-scale</span>=<span class="str">"1.5"</span>
+  <span class="kw">data-glm-easing</span>=<span class="str">"elastic.out"</span>
+&gt;
+
+<span class="cm">&lt;!-- Inertia with custom decay --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-click</span>
+  <span class="kw">data-glm-prop-translateX</span>=<span class="str">"200px"</span>
+  <span class="kw">data-glm-inertia</span>=<span class="str">"0.92"</span>
+&gt;
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── API OVERVIEW ──────────────────────────── -->
+<section class="section" id="api">
+  <div class="section-label">10 — JavaScript API</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    Full programmatic control.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    For complex sequences, use the JS API directly.
+  </p>
+
+  <div class="api-grid">
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6">
+      <h4>GLM.to()</h4>
+      <p>Animate from current state to target values. Returns a controllable Tween.</p>
+    </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.1">
+      <h4>GLM.from()</h4>
+      <p>Set initial values, then animate back to element's natural state.</p>
+    </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.2">
+      <h4>GLM.fromTo()</h4>
+      <p>Full control — define both start and end animation states explicitly.</p>
+    </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.3">
+      <h4>GLM.timeline()</h4>
+      <p>Sequence tweens with position offsets. Chain .to() calls with "<=" or "+=0.2".</p>
+    </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.4">
+      <h4>GLM.scrollTrigger()</h4>
+      <p>Link tween progress to scroll position with scrub, pin, and markers.</p>
+    </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.5">
+      <h4>GLM.splitText()</h4>
+      <p>Split into .chars, .words, or .lines arrays for targeted animation.</p>
+    </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.6">
+      <h4>GLM.set()</h4>
+      <p>Apply transform, filter, and opacity states immediately before or between tweens.</p>
+    </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.7">
+      <h4>GLM.magnetic()</h4>
+      <p>Cursor-following magnetic attraction with configurable strength and ease.</p>
+    </div>
+  </div>
+
+  <div class="code-block" style="margin-top:3rem"
+       data-glm-trigger-view
+       data-glm-prop-translateY="20px"
+       data-glm-prop-opacity="0"
+       data-glm-easing="power2.out"
+       data-glm-duration="0.6">
+<span class="cm">// Tween</span>
+<span class="fn">GLM</span>.<span class="kw">to</span>(<span class="str">'.box'</span>, { translateY: <span class="str">'100px'</span>, opacity: <span class="str">'0.5'</span> }, {
+  duration: <span class="str">0.8</span>,
+  ease: <span class="str">'elastic.out'</span>,
+  stagger: <span class="str">0.1</span>,
+  onComplete: () => <span class="fn">console</span>.<span class="kw">log</span>(<span class="str">'done'</span>)
+});
+
+<span class="cm">// Timeline</span>
+<span class="kw">const</span> tl = <span class="fn">GLM</span>.<span class="kw">timeline</span>();
+tl.<span class="kw">to</span>(<span class="str">'.hero'</span>, { opacity: <span class="str">'1'</span> }, { duration: <span class="str">0.5</span> })
+  .<span class="kw">to</span>(<span class="str">'.title'</span>, { translateY: <span class="str">'0px'</span> }, { duration: <span class="str">0.8</span> }, <span class="str">'-=0.3'</span>);
+
+<span class="cm">// Scroll scrub</span>
+<span class="fn">GLM</span>.<span class="kw">scrollTrigger</span>({
+  trigger: <span class="str">'.panel'</span>,
+  start: <span class="str">'top 80%'</span>,
+  end: <span class="str">'bottom 20%'</span>,
+  scrub: <span class="kw">true</span>,
+  animation: <span class="fn">GLM</span>.<span class="kw">to</span>(<span class="str">'.panel'</span>, { rotate: <span class="str">'360deg'</span> }, { paused: <span class="kw">true</span> })
+});
+
+<span class="cm">// Text split</span>
+<span class="kw">const</span> split = <span class="fn">GLM</span>.<span class="kw">splitText</span>(<span class="str">'.heading'</span>, { type: <span class="str">'chars'</span> });
+<span class="fn">GLM</span>.<span class="kw">to</span>(split.chars, { translateY: <span class="str">'0px'</span>, opacity: <span class="str">'1'</span> }, {
+  stagger: <span class="str">0.03</span>,
+  ease: <span class="str">'power3.out'</span>
+});
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── SMOOTH SCROLL ─────────────────────────── -->
+<section class="section">
+  <div class="section-label">11 — Smooth Scroll</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    Butter-smooth scrolling.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Enable lerp-based smooth scrolling with a single call. 
+    Wraps your content in a fixed container and interpolates 
+    scroll position for that silk-like feel.
+  </p>
+  <div class="code-block"
+       data-glm-trigger-view
+       data-glm-prop-translateY="20px"
+       data-glm-prop-opacity="0"
+       data-glm-duration="0.6">
+<span class="cm">// Wrap content in a container and enable smooth scroll</span>
+<span class="cm">// HTML: &lt;div id="smooth-wrapper"&gt;...all content...&lt;/div&gt;</span>
+<span class="kw">const</span> smooth = <span class="fn">GLM</span>.<span class="kw">smoothScroll</span>({
+  content: <span class="str">'#smooth-wrapper'</span>,
+  lerp: <span class="str">0.08</span>
+});
+
+<span class="cm">// Destroy when needed</span>
+smooth.<span class="kw">kill</span>();
+  </div>
+  <div class="demo-area" style="height:160px; margin-top:2rem; flex-direction: column; gap: 0.75rem;">
+    <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase;">Smooth scroll is active on this page</span>
+    <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent); letter-spacing: 0.05em;">GLM.smoothScroll({ content: '#page-content', lerp: 0.08 })</span>
+  </div>
+
+  <div class="code-block"
+       data-glm-trigger-view
+       data-glm-prop-translateY="20px"
+       data-glm-prop-opacity="0"
+       data-glm-duration="0.6">
+<span class="cm">// Minimal page structure</span>
+&lt;div <span class="kw">id</span>=<span class="str">"page-content"</span>&gt;
+  ...
+&lt;/div&gt;
+
+<span class="cm">// Enable smooth scrolling after DOM is ready</span>
+<span class="fn">GLM</span>.<span class="kw">smoothScroll</span>({
+  content: <span class="str">'#page-content'</span>,
+  lerp: <span class="str">0.08</span>
+});
+  </div>
+
+  <div class="demo-area" style="height:220px; margin-top:2rem;">
+    <div class="smooth-stack"
+         data-glm-trigger-view
+         data-glm-stagger
+         data-glm-stagger-delay="0.08"
+         data-glm-prop-translateY="20px"
+         data-glm-prop-opacity="0"
+         data-glm-duration="0.7">
+      <div class="smooth-layer">
+        <strong>Window Scroll</strong>
+        <span>native input</span>
+      </div>
+      <div class="smooth-layer">
+        <strong>Lerp</strong>
+        <span>interpolated position</span>
+      </div>
+      <div class="smooth-layer">
+        <strong>#page-content</strong>
+        <span>translated container</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────── -->
+<footer class="footer">
+  <strong>GLM</strong> — Greenlight Motion v1.0.0 — Zero dependencies, maximum performance.
+</footer>
+
+<!-- ─── FRAMEWORK ─────────────────────────────── -->
+<script src="glm.js"></script>
+<script src="glm-magnetic.js"></script>
+<script>
+(function () {
+
+  // ─── MAGNETIC BUTTONS ─────────────────────
+  GLM.magnetic('#mag-1', { strength: 0.35, ease: 0.08 });
+  GLM.magnetic('#mag-2', { strength: 0.25, ease: 0.06 });
+  GLM.magnetic('#mag-3', { strength: 0.4, ease: 0.1 });
+
+  // ─── EASING SHOWCASE ──────────────────────
+  const easingNames = [
+    'power1.out', 'power2.out', 'power3.out', 'power4.out',
+    'back.out', 'back.in', 'back.inOut',
+    'elastic.out', 'elastic.in',
+    'bounce.out', 'bounce.in',
+    'circ.out', 'expo.out', 'sine.out',
+    'ease-in', 'ease-out', 'ease-in-out',
+  ];
+
+  const grid = document.getElementById('easing-grid');
+  easingNames.forEach(name => {
+    const item = document.createElement('div');
+    item.className = 'easing-item';
+    item.innerHTML = `
+      <div class="easing-name">${name}</div>
+      <div class="easing-track">
+        <div class="easing-dot"></div>
+      </div>
+    `;
+    grid.appendChild(item);
+
+    const dot = item.querySelector('.easing-dot');
+    const track = item.querySelector('.easing-track');
+    let tween = null;
+    let resetTimer = null;
+    const resetDot = () => {
+      if (resetTimer) {
+        clearTimeout(resetTimer);
+        resetTimer = null;
+      }
+      if (tween) tween.kill();
+      tween = null;
+      GLM.set(dot, { translateX: '0px' });
+    };
+    const runPreview = () => {
+      resetDot();
+      const distance = Math.max(track.clientWidth - dot.clientWidth, 0);
+      const currentTween = GLM.to(dot, { translateX: `${distance}px` }, {
+        duration: 1.2,
+        ease: name,
+        onComplete: () => {
+          if (tween !== currentTween) return;
+          resetTimer = setTimeout(() => {
+            if (tween !== currentTween) return;
+            resetDot();
+          }, 600);
+        }
+      });
+      tween = currentTween;
+    };
+
+    item.addEventListener('click', () => {
+      runPreview();
+    });
+  });
+})();
+</script>
+</body>
+</html>
