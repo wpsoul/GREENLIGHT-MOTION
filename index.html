@@ -422,6 +422,45 @@ a { color: var(--accent); text-decoration: none; }
   text-transform: uppercase;
   color: var(--dim);
 }
+.drag-boundary {
+  min-height: 240px;
+  border: 1px dashed rgba(200,255,46,0.24);
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03)),
+    radial-gradient(circle at center, rgba(200,255,46,0.08), transparent 65%);
+  position: relative;
+  overflow: hidden;
+}
+.drag-chip {
+  width: 92px;
+  height: 92px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #0a0a0c;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  position: absolute;
+  left: calc(50% - 46px);
+  top: calc(50% - 46px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+.drag-boundary-label {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
 
 /* ─── MAGNETIC DEMO ─────────────────────────── */
 .magnetic-area {
@@ -1047,9 +1086,54 @@ a { color: var(--accent); text-decoration: none; }
 
 <div class="divider"></div>
 
+<!-- ─── DRAGGABLE ─────────────────────────────── -->
+<section class="section">
+  <div class="section-label">07 — Draggable</div>
+  <h2 class="section-title"
+      data-glm-trigger-view
+      data-glm-split="words"
+      data-glm-prop-translateY="40px"
+      data-glm-prop-opacity="0"
+      data-glm-easing="power3.out"
+      data-glm-duration="0.8"
+      data-glm-stagger-delay="0.04">
+    Drag with boundaries.
+  </h2>
+  <p class="section-desc"
+     data-glm-trigger-view
+     data-glm-prop-translateY="30px"
+     data-glm-prop-opacity="0"
+     data-glm-easing="power2.out"
+     data-glm-duration="0.8"
+     data-glm-delay="0.3">
+    Add <code>data-glm-draggable</code> to any element.
+    Pass a selector to keep it constrained inside a limit container, with smooth motion and inertia on release.
+  </p>
+  <div class="demo-grid">
+    <div class="demo-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="40px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.7">
+      <div class="demo-card-label">Plugin</div>
+      <h3 class="demo-card-title">Bounded Drag</h3>
+      <p>Drag the block and release it. It keeps moving with inertia, but never leaves the dashed boundary.</p>
+      <div class="demo-area" style="height:260px;">
+        <div class="drag-boundary" id="drag-limit-demo" style="width:min(100%, 360px);">
+          <div class="drag-boundary-label">limit: #drag-limit-demo</div>
+          <div class="drag-chip" data-glm-draggable="#drag-limit-demo">Drag</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <!-- ─── EASINGS ──────────────────────────────── -->
 <section class="section" id="easings">
-  <div class="section-label">07 — Easing Library</div>
+  <div class="section-label">08 — Easing Library</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1078,7 +1162,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── INERTIA ──────────────────────────────── -->
 <section class="section">
-  <div class="section-label">08 — Inertia</div>
+  <div class="section-label">09 — Inertia</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="chars"
@@ -1115,7 +1199,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── DATA ATTRIBUTES REFERENCE ─────────────── -->
 <section class="section" id="data-attrs">
-  <div class="section-label">09 — Data Attributes</div>
+  <div class="section-label">10 — Data Attributes</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1193,6 +1277,13 @@ a { color: var(--accent); text-decoration: none; }
   <span class="kw">data-glm-duration</span>=<span class="str">"1"</span>
 &gt;
 
+<span class="cm">&lt;!-- Draggable inside boundary selector --&gt;</span>
+&lt;div <span class="kw">id</span>=<span class="str">"limit-box"</span>&gt;
+  &lt;div
+    <span class="kw">data-glm-draggable</span>=<span class="str">"#limit-box"</span>
+  &gt;
+&lt;/div&gt;
+
 <span class="cm">&lt;!-- Click trigger on external element --&gt;</span>
 &lt;div
   <span class="kw">data-glm-trigger-click</span>=<span class="str">"#my-button"</span>
@@ -1213,7 +1304,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── API OVERVIEW ──────────────────────────── -->
 <section class="section" id="api">
-  <div class="section-label">10 — JavaScript API</div>
+  <div class="section-label">11 — JavaScript API</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1314,6 +1405,16 @@ a { color: var(--accent); text-decoration: none; }
       <h4>GLM.magnetic()</h4>
       <p>Cursor-following magnetic attraction with configurable strength and ease.</p>
     </div>
+    <div class="api-card"
+         data-glm-trigger-view
+         data-glm-prop-translateY="30px"
+         data-glm-prop-opacity="0"
+         data-glm-easing="power2.out"
+         data-glm-duration="0.6"
+         data-glm-delay="0.8">
+      <h4>GLM.draggable()</h4>
+      <p>Drag elements freely or constrain them inside a boundary element via selector.</p>
+    </div>
   </div>
 
   <div class="code-block" style="margin-top:3rem"
@@ -1350,6 +1451,11 @@ tl.<span class="kw">to</span>(<span class="str">'.hero'</span>, { opacity: <span
   stagger: <span class="str">0.03</span>,
   ease: <span class="str">'power3.out'</span>
 });
+
+<span class="cm">// Draggable with boundary</span>
+<span class="fn">GLM</span>.<span class="kw">draggable</span>(<span class="str">'.card'</span>, {
+  boundary: <span class="str">'.canvas'</span>
+});
   </div>
 </section>
 
@@ -1357,7 +1463,7 @@ tl.<span class="kw">to</span>(<span class="str">'.hero'</span>, { opacity: <span
 
 <!-- ─── SMOOTH SCROLL ─────────────────────────── -->
 <section class="section">
-  <div class="section-label">11 — Smooth Scroll</div>
+  <div class="section-label">12 — Smooth Scroll</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1445,6 +1551,7 @@ smooth.<span class="kw">kill</span>();
 
 <!-- ─── FRAMEWORK ─────────────────────────────── -->
 <script src="glm.js"></script>
+<script src="glm-graggable.js"></script>
 <script src="glm-magnetic.js"></script>
 <script>
 (function () {
