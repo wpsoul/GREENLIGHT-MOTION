@@ -668,6 +668,24 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 0.85rem;
   line-height: 1.7;
 }
+.slider-demo-skew {
+  --slider-skew: 0deg;
+}
+.slider-demo-skew .slider-slide {
+  transform: skewX(var(--slider-skew));
+  transform-origin: center center;
+  transition: transform 120ms linear;
+}
+.slider-demo-skew .slider-slide:nth-child(2n) {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
+    radial-gradient(circle at top left, rgba(92, 227, 255, 0.14), transparent 45%);
+}
+.slider-demo-skew .slider-slide:nth-child(3n) {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)),
+    radial-gradient(circle at bottom right, rgba(255, 111, 97, 0.12), transparent 45%);
+}
 
 /* ─── MAGNETIC DEMO ─────────────────────────── */
 .magnetic-area {
@@ -733,24 +751,6 @@ a { color: var(--accent); text-decoration: none; }
   top: 50%;
   transform: translate(0, -50%);
   left: 0;
-}
-
-/* ─── INERTIA DEMO ──────────────────────────── */
-.inertia-area {
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.inertia-circle {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  cursor: grab;
 }
 
 /* ─── DATA ATTR DEMO ────────────────────────── */
@@ -1128,7 +1128,7 @@ a { color: var(--accent); text-decoration: none; }
      data-glm-duration="0.8"
      data-glm-delay="0.3">
     Tie animation progress directly to scroll position.
-    Scrub forward and backward with sub-pixel precision, without pinning the block in place.
+    Scrub forward and backward with sub-pixel precision, then optionally smooth the catch-up for faster wheel and trackpad input.
   </p>
 </section>
 
@@ -1140,7 +1140,9 @@ a { color: var(--accent); text-decoration: none; }
          data-glm-prop-scale="0.3"
          data-glm-prop-filter-blur="10px"
          data-glm-scrub-start="top 80%"
-         data-glm-scrub-end="bottom 20%">
+         data-glm-scrub-end="bottom 20%"
+         data-glm-scrub-smooth="0.12"
+         data-glm-scrub-max-step="0.04">
     </div>
   </div>
 </section>
@@ -1511,14 +1513,17 @@ a { color: var(--accent); text-decoration: none; }
      data-glm-duration="0.8"
      data-glm-delay="0.3">
     Configure rows per device, attach any blocks as arrow controllers,
-    enable loop mode, and choose whether slides snap after drag inertia.
+    enable loop mode, toggle drag inertia with a data attribute,
+    enable wheel or trackpad scrolling, and map slider velocity into your own CSS property.
   </p>
-  <div class="demo-area" style="height:auto; padding:2rem;">
+  <div class="demo-area" style="height:auto; padding:2rem; flex-direction:column; align-items:center; gap:1.5rem;">
     <div class="slider-demo"
          data-glm-slider
          data-glm-slider-row="3"
          data-glm-slider-row-tablet="2"
          data-glm-slider-row-mobile="1"
+         data-glm-slider-free-scroll
+         data-glm-slider-inertia
          data-glm-slider-speed="0.8"
          data-glm-slider-snap-speed="1"
          data-glm-slider-scroll="1"
@@ -1530,7 +1535,7 @@ a { color: var(--accent); text-decoration: none; }
       <div class="slider-toolbar">
         <div class="slider-toolbar-copy">
           <strong>GLM Slider Demo</strong>
-          <span>drag, flick, snap, loop</span>
+          <span>drag, wheel, flick, snap, loop</span>
         </div>
         <div class="slider-arrows">
           <div class="slider-arrow slider-demo-left">←</div>
@@ -1572,6 +1577,59 @@ a { color: var(--accent); text-decoration: none; }
         </div>
       </div>
     </div>
+    <div class="slider-demo slider-demo-skew"
+         data-glm-slider
+         data-glm-slider-row="2"
+         data-glm-slider-row-tablet="2"
+         data-glm-slider-row-mobile="1"
+         data-glm-slider-free-scroll
+         data-glm-slider-inertia
+         data-glm-slider-inertia-prop="--slider-skew"
+         data-glm-slider-inertia-minmax="-7, 7"
+         data-glm-slider-inertia-units="deg"
+         data-glm-slider-inertia-strength="0.035"
+         data-glm-slider-speed="0.8"
+         data-glm-slider-scroll="1"
+         data-glm-slider-scrollsnap="1"
+         data-glm-slider-left-arrow=".slider-skew-left"
+         data-glm-slider-right-arrow=".slider-skew-right"
+         data-glm-slider-loop
+         >
+      <div class="slider-toolbar">
+        <div class="slider-toolbar-copy">
+          <strong>Inertia + skew demo</strong>
+          <span>driven only by slider data attributes</span>
+        </div>
+        <div class="slider-arrows">
+          <div class="slider-arrow slider-skew-left">←</div>
+          <div class="slider-arrow slider-skew-right">→</div>
+        </div>
+      </div>
+      <div class="slider-viewport" data-glm-slider-viewport>
+        <div class="slider-track" data-glm-slider-track>
+          <article class="slider-slide">
+            <span>01 / Drift</span>
+            <strong>Cards lean into the motion.</strong>
+            <p>As velocity rises, each card picks up a slight skew and settles back smoothly.</p>
+          </article>
+          <article class="slider-slide">
+            <span>02 / Inertia</span>
+            <strong>Flick to feel the release.</strong>
+            <p>The visual tilt stays alive through the momentum phase instead of stopping at pointer up.</p>
+          </article>
+          <article class="slider-slide">
+            <span>03 / Snap</span>
+            <strong>Eased settle, not a hard lock.</strong>
+            <p>Arrow clicks and snap completion continue to drive the same skew response.</p>
+          </article>
+          <article class="slider-slide">
+            <span>04 / Loop</span>
+            <strong>Continuous in both directions.</strong>
+            <p>The looped track keeps the motion feeling uninterrupted while the cards react to speed.</p>
+          </article>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1606,46 +1664,9 @@ a { color: var(--accent); text-decoration: none; }
 
 <div class="divider"></div>
 
-<!-- ─── INERTIA ──────────────────────────────── -->
-<section class="section">
-  <div class="section-label">12 — Inertia</div>
-  <h2 class="section-title"
-      data-glm-trigger-view
-      data-glm-split="chars"
-      data-glm-prop-translateY="40px"
-      data-glm-prop-opacity="0"
-      data-glm-easing="power3.out"
-      data-glm-duration="0.8"
-      data-glm-stagger-delay="0.02">
-    Momentum that feels real.
-  </h2>
-  <p class="section-desc"
-     data-glm-trigger-view
-     data-glm-prop-translateY="30px"
-     data-glm-prop-opacity="0"
-     data-glm-easing="power2.out"
-     data-glm-duration="0.8"
-     data-glm-delay="0.3">
-    Add data-glm-inertia to carry velocity past the animation endpoint. 
-    Natural deceleration with configurable decay.
-  </p>
-  <div class="demo-area" style="height:250px; margin-top:2rem;">
-    <div class="box" style="width:80px;height:80px;border-radius:50%"
-         data-glm-trigger-click
-         data-glm-prop-translateX="200px"
-         data-glm-easing="power2.out"
-         data-glm-duration="0.5"
-         data-glm-inertia="0.88">
-    </div>
-  </div>
-  <p style="text-align:center; color:var(--dim); font-family:var(--font-mono); font-size:0.7rem; margin-top:1rem; letter-spacing:0.05em;">CLICK THE CIRCLE — WATCH THE INERTIA OVERSHOOT</p>
-</section>
-
-<div class="divider"></div>
-
 <!-- ─── DATA ATTRIBUTES REFERENCE ─────────────── -->
 <section class="section" id="data-attrs">
-  <div class="section-label">13 — Data Attributes</div>
+  <div class="section-label">12 — Data Attributes</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1687,6 +1708,8 @@ a { color: var(--accent); text-decoration: none; }
   <span class="kw">data-glm-trigger-scroll</span>
   <span class="kw">data-glm-prop-filter-blur</span>=<span class="str">"20px"</span>
   <span class="kw">data-glm-prop-translateY</span>=<span class="str">"100px"</span>
+  <span class="kw">data-glm-scrub-smooth</span>=<span class="str">"0.12"</span>
+  <span class="kw">data-glm-scrub-max-step</span>=<span class="str">"0.04"</span>
 &gt;
 
 <span class="cm">&lt;!-- Stagger children on view --&gt;</span>
@@ -1736,6 +1759,12 @@ a { color: var(--accent); text-decoration: none; }
   <span class="kw">data-glm-slider-row</span>=<span class="str">"3"</span>
   <span class="kw">data-glm-slider-row-tablet</span>=<span class="str">"2"</span>
   <span class="kw">data-glm-slider-row-mobile</span>=<span class="str">"1"</span>
+  <span class="kw">data-glm-slider-free-scroll</span>
+  <span class="kw">data-glm-slider-inertia</span>
+  <span class="kw">data-glm-slider-inertia-prop</span>=<span class="str">"--slider-skew"</span>
+  <span class="kw">data-glm-slider-inertia-minmax</span>=<span class="str">"-7, 7"</span>
+  <span class="kw">data-glm-slider-inertia-units</span>=<span class="str">"deg"</span>
+  <span class="kw">data-glm-slider-inertia-strength</span>=<span class="str">"0.035"</span>
   <span class="kw">data-glm-slider-speed</span>=<span class="str">"0.8"</span>
   <span class="kw">data-glm-slider-snap-speed</span>=<span class="str">"1"</span>
   <span class="kw">data-glm-slider-scroll</span>=<span class="str">"1"</span>
@@ -1775,13 +1804,6 @@ a { color: var(--accent); text-decoration: none; }
   <span class="kw">data-glm-prop-scale</span>=<span class="str">"1.5"</span>
   <span class="kw">data-glm-easing</span>=<span class="str">"elastic.out"</span>
 &gt;
-
-<span class="cm">&lt;!-- Inertia with custom decay --&gt;</span>
-&lt;div
-  <span class="kw">data-glm-trigger-click</span>
-  <span class="kw">data-glm-prop-translateX</span>=<span class="str">"200px"</span>
-  <span class="kw">data-glm-inertia</span>=<span class="str">"0.92"</span>
-&gt;
   </div>
 </section>
 
@@ -1789,7 +1811,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <!-- ─── API OVERVIEW ──────────────────────────── -->
 <section class="section" id="api">
-  <div class="section-label">14 — JavaScript API</div>
+  <div class="section-label">13 — JavaScript API</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"
@@ -1937,6 +1959,8 @@ tl.<span class="kw">to</span>(<span class="str">'.hero'</span>, { opacity: <span
   start: <span class="str">'top 80%'</span>,
   end: <span class="str">'bottom 20%'</span>,
   scrub: <span class="kw">true</span>,
+  scrubSmooth: <span class="str">0.12</span>,
+  scrubMaxStep: <span class="str">0.04</span>,
   animation: <span class="fn">GLM</span>.<span class="kw">to</span>(<span class="str">'.panel'</span>, { rotate: <span class="str">'360deg'</span> }, { paused: <span class="kw">true</span> })
 });
 
@@ -1973,7 +1997,7 @@ tl.<span class="kw">to</span>(<span class="str">'.hero'</span>, { opacity: <span
 
 <!-- ─── SMOOTH SCROLL ─────────────────────────── -->
 <section class="section">
-  <div class="section-label">15 — Smooth Scroll</div>
+  <div class="section-label">14 — Smooth Scroll</div>
   <h2 class="section-title"
       data-glm-trigger-view
       data-glm-split="words"

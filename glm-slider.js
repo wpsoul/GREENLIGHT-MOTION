@@ -1,4 +1,4 @@
-/*! GLM Slider — Carousel addon with drag, inertia, loop, and snap */
+/*! GLM Slider — Carousel addon with drag, loop, snap, and optional inertia */
 (function (root) {
   'use strict';
 
@@ -24,6 +24,21 @@
   function blendForDuration(durationSec, dtSec) {
     const duration = Math.max(durationSec || 0, 0.001);
     return 1 - Math.pow(0.01, dtSec / duration);
+  }
+
+  function easeInOutSine(t) {
+    return -(Math.cos(Math.PI * t) - 1) / 2;
+  }
+
+  function parseNumberPair(value, fallbackMin, fallbackMax) {
+    if (value == null || value === '') return [fallbackMin, fallbackMax];
+    const matches = String(value).match(/-?\d*\.?\d+/g);
+    if (!matches || !matches.length) return [fallbackMin, fallbackMax];
+    const first = parseFloat(matches[0]);
+    const second = parseFloat(matches[1] != null ? matches[1] : matches[0]);
+    const min = Number.isFinite(first) ? first : fallbackMin;
+    const max = Number.isFinite(second) ? second : fallbackMax;
+    return min <= max ? [min, max] : [max, min];
   }
 
   function slider(rootEl, opts) {
@@ -58,14 +73,20 @@
     const tabletBreakpoint = parseInt(opts.tabletBreakpoint, 10) || 1024;
     const mobileBreakpoint = parseInt(opts.mobileBreakpoint, 10) || 768;
     const loop = !!opts.loop;
-    const snap = opts.snap !== false;
+    const snap = !!opts.snap;
+    const freeScroll = !!opts.freeScroll;
     const dragEase = Number.isFinite(opts.ease) ? opts.ease : 0.24;
     const arrowDuration = Number.isFinite(opts.speed) ? opts.speed : 0.8;
     const snapDuration = Number.isFinite(opts.snapSpeed) ? opts.snapSpeed : 1;
+    const inertiaEnabled = !!opts.inertia;
     const inertiaDecay = Number.isFinite(opts.inertiaDecay) ? opts.inertiaDecay : 0.92;
     const minVelocity = Number.isFinite(opts.minVelocity) ? opts.minVelocity : 20;
     const scrollStep = Math.max(parseInt(opts.scroll, 10) || 1, 1);
     const snapStep = Math.max(parseInt(opts.scrollSnap, 10) || 1, 1);
+    const inertiaProp = opts.inertiaProp || '';
+    const inertiaUnits = opts.inertiaUnits != null ? String(opts.inertiaUnits) : '';
+    const inertiaStrength = Number.isFinite(opts.inertiaStrength) ? opts.inertiaStrength : 0.035;
+    const [inertiaMin, inertiaMax] = parseNumberPair(opts.inertiaMinMax, -7, 7);
 
     const leftArrow = resolveElement(opts.leftArrow);
     const rightArrow = resolveElement(opts.rightArrow);
@@ -77,14 +98,20 @@
     let position = 0;
     let targetPosition = 0;
     let snapTarget = 0;
+    let snapStartPosition = 0;
+    let snapElapsed = 0;
     let activeSnapDuration = snapDuration;
     let velocity = 0;
     let startPointerX = 0;
     let startPosition = 0;
     let lastPointerX = 0;
     let lastPointerTime = 0;
+    let lastWheelTime = 0;
     let lastFrameTime = 0;
+    let lastMotionPosition = 0;
+    let motionVelocity = 0;
     let rafId = null;
+    let wheelSnapTimer = null;
 
     let clones = [];
     let renderedItems = originalItems.slice();
@@ -98,6 +125,36 @@
     let cloneOffset = 0;
     let hasLooping = false;
     let snapPoints = [{ itemIndex: 0, offset: 0 }];
+
+    function emitUpdate() {
+      rootEl.dispatchEvent(new CustomEvent('glm:sliderupdate', {
+        detail: {
+          position: getRenderedPosition(),
+          rawPosition: position,
+          velocity: motionVelocity,
+          dragVelocity: velocity,
+          isDragging: dragging,
+          isInertia: inertiaActive,
+          isSnapping: snapActive,
+        }
+      }));
+    }
+
+    function applyInertiaProp() {
+      if (!inertiaProp) return;
+      const next = clamp(motionVelocity * inertiaStrength, inertiaMin, inertiaMax);
+      if (inertiaProp.startsWith('--') || inertiaProp.indexOf('-') !== -1) {
+        rootEl.style.setProperty(inertiaProp, `${next}${inertiaUnits}`);
+      } else {
+        rootEl.style[inertiaProp] = `${next}${inertiaUnits}`;
+      }
+    }
+
+    function clearWheelSnap() {
+      if (!wheelSnapTimer) return;
+      clearTimeout(wheelSnapTimer);
+      wheelSnapTimer = null;
+    }
 
     function getPerRow() {
       const width = root.innerWidth || window.innerWidth;
@@ -159,7 +216,8 @@
     }
 
     function render() {
-      track.style.transform = `translate3d(${-getRenderedPosition()}px, 0, 0)`;
+      const renderedPosition = getRenderedPosition();
+      track.style.transform = `translate3d(${-renderedPosition}px, 0, 0)`;
     }
 
     function stopFrame() {
@@ -217,6 +275,8 @@
     }
 
     function goToItem(index, durationSec) {
+      snapStartPosition = position;
+      snapElapsed = 0;
       snapTarget = itemIndexToPosition(index, position);
       targetPosition = snapTarget;
       activeSnapDuration = durationSec != null ? durationSec : snapDuration;
@@ -255,8 +315,11 @@
           keepRunning = true;
         }
       } else if (snapActive) {
-        position += (snapTarget - position) * blendForDuration(activeSnapDuration, dtSec);
-        if (Math.abs(snapTarget - position) < 0.5) {
+        snapElapsed += dtSec;
+        const progress = clamp(snapElapsed / Math.max(activeSnapDuration, 0.001), 0, 1);
+        const eased = easeInOutSine(progress);
+        position = snapStartPosition + (snapTarget - snapStartPosition) * eased;
+        if (progress >= 1) {
           position = snapTarget;
           snapActive = false;
         } else {
@@ -264,7 +327,12 @@
         }
       }
 
+      const motionBefore = lastMotionPosition;
       render();
+      motionVelocity = (position - motionBefore) / dtSec;
+      lastMotionPosition = position;
+      applyInertiaProp();
+      emitUpdate();
 
       if (keepRunning || dragging || inertiaActive || snapActive) {
         startFrame();
@@ -299,10 +367,16 @@
         try { viewport.releasePointerCapture(e.pointerId); } catch (_) {}
       }
 
-      inertiaActive = Math.abs(velocity) >= minVelocity;
+      inertiaActive = inertiaEnabled && Math.abs(velocity) >= minVelocity;
       if (!inertiaActive && snap) {
         goToItem(getNearestSnapPoint().itemIndex, snapDuration);
         return;
+      }
+
+      if (!inertiaActive) {
+        position = targetPosition;
+        motionVelocity = 0;
+        lastMotionPosition = position;
       }
 
       startFrame();
@@ -384,8 +458,14 @@
       const anchor = itemIndexToPosition(currentIndex, position || itemIndexToPosition(currentIndex, cloneOffset));
       position = anchor;
       targetPosition = anchor;
+      snapStartPosition = anchor;
       snapTarget = anchor;
+      snapElapsed = 0;
+      motionVelocity = 0;
+      lastMotionPosition = position;
       render();
+      applyInertiaProp();
+      emitUpdate();
     }
 
     function onResize() {
@@ -410,10 +490,58 @@
       if (dragging) e.preventDefault();
     }
 
+    function normalizeWheelDelta(e) {
+      const dominant = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!dominant) return 0;
+      if (e.deltaMode === 1) return dominant * 16;
+      if (e.deltaMode === 2) return dominant * Math.max(viewport.clientWidth, 1);
+      return dominant;
+    }
+
+    function onWheel(e) {
+      if (!freeScroll || dragging) return;
+      if (originalItems.length <= perRow && !hasLooping) return;
+
+      const delta = normalizeWheelDelta(e);
+      if (!delta) return;
+
+      const nextPosition = clampPosition(position + delta);
+      const moved = hasLooping || Math.abs(nextPosition - position) > 0.01;
+
+      if (!moved) return;
+
+      e.preventDefault();
+      clearWheelSnap();
+      snapActive = false;
+      inertiaActive = false;
+
+      const now = performance.now();
+      const dtSec = Math.max((now - lastWheelTime) / 1000, 1 / 60);
+      lastWheelTime = now;
+
+      velocity = (nextPosition - position) / dtSec;
+      position = nextPosition;
+      targetPosition = nextPosition;
+      motionVelocity = velocity;
+      lastMotionPosition = position;
+      render();
+      applyInertiaProp();
+      emitUpdate();
+
+      if (snap) {
+        wheelSnapTimer = setTimeout(() => {
+          wheelSnapTimer = null;
+          velocity = 0;
+          goToItem(getNearestSnapPoint().itemIndex, snapDuration);
+        }, 140);
+      }
+    }
+
     viewport.style.overflow = 'hidden';
     viewport.style.touchAction = 'pan-y';
     track.style.willChange = 'transform';
     viewport.addEventListener('pointerdown', onPointerDown);
+    viewport.addEventListener('wheel', onWheel, { passive: false });
     rootEl.addEventListener('mouseleave', endDrag);
     rootEl.addEventListener('dragstart', onDragStart);
     rootEl.addEventListener('selectstart', onSelectStart);
@@ -431,8 +559,10 @@
       kill() {
         stopFrame();
         endDrag();
+        clearWheelSnap();
         clearClones();
         viewport.removeEventListener('pointerdown', onPointerDown);
+        viewport.removeEventListener('wheel', onWheel);
         rootEl.removeEventListener('mouseleave', endDrag);
         rootEl.removeEventListener('dragstart', onDragStart);
         rootEl.removeEventListener('selectstart', onSelectStart);
@@ -443,6 +573,10 @@
         viewport.style.touchAction = prevInlineTouchAction;
         track.style.willChange = prevTrackWillChange;
         track.style.transform = prevTrackTransform;
+        if (inertiaProp) {
+          if (inertiaProp.startsWith('--') || inertiaProp.indexOf('-') !== -1) rootEl.style.removeProperty(inertiaProp);
+          else rootEl.style[inertiaProp] = '';
+        }
         originalItems.forEach(item => {
           const prev = prevItemInline.get(item);
           if (!prev) return;
@@ -468,7 +602,13 @@
         leftArrow: el.getAttribute('data-glm-slider-left-arrow'),
         rightArrow: el.getAttribute('data-glm-slider-right-arrow'),
         loop: parseBool(el.getAttribute('data-glm-slider-loop'), false),
-        snap: parseBool(el.getAttribute('data-glm-slider-snap'), true),
+        snap: parseBool(el.getAttribute('data-glm-slider-snap'), false),
+        freeScroll: parseBool(el.getAttribute('data-glm-slider-free-scroll'), false),
+        inertia: parseBool(el.getAttribute('data-glm-slider-inertia'), false),
+        inertiaProp: el.getAttribute('data-glm-slider-inertia-prop'),
+        inertiaMinMax: el.getAttribute('data-glm-slider-inertia-minmax'),
+        inertiaUnits: el.getAttribute('data-glm-slider-inertia-units'),
+        inertiaStrength: parseFloat(el.getAttribute('data-glm-slider-inertia-strength')),
         speed: parseFloat(el.getAttribute('data-glm-slider-speed')),
         snapSpeed: parseFloat(el.getAttribute('data-glm-slider-snap-speed')),
         scroll: parseInt(el.getAttribute('data-glm-slider-scroll'), 10),

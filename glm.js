@@ -9,6 +9,8 @@
   const DEFAULT_EASE = 'power2.out';
   const DEFAULT_DURATION = 0.7;
   const DEFAULT_VIEW_THRESHOLD = 0.85;
+  const DEFAULT_TABLET_BREAKPOINT = 1024;
+  const DEFAULT_MOBILE_BREAKPOINT = 768;
 
   const PI = Math.PI;
   const HALF_PI = PI / 2;
@@ -357,8 +359,6 @@
       this.onStart = opts.onStart || null;
       this.onUpdate = opts.onUpdate || null;
       this.onComplete = opts.onComplete || null;
-      this.inertia = opts.inertia || false;
-      this.inertiaDecay = opts.inertiaDecay || 0.92;
 
       this._propDefs = [];
       for (const [rawProp, v] of Object.entries(props)) {
@@ -428,7 +428,6 @@
       if (!this._started) this._init();
 
       this._elapsed += dt;
-      const dtSec = Math.max(dt / 1000, 0.001);
       let allDone = true;
 
       this.targets.forEach((el, i) => {
@@ -448,9 +447,7 @@
             _setProp(el, e.prop, e.current);
             continue;
           }
-          const prev = e.current;
           e.current = e.from + (e.to - e.from) * eased;
-          if (this.inertia) e.velocity = (e.current - prev) / dtSec;
           _setProp(el, e.prop, e.current, e.unit);
         }
         _flushEl(el);
@@ -487,52 +484,8 @@
 
         this._done = true;
         _ticker.remove(this._tickBound);
-        if (this.inertia) this._runInertia();
         if (this.onComplete) this.onComplete();
       }
-    }
-
-    _runInertia() {
-      const decay = this.inertiaDecay;
-      const durationSec = Math.max(this.duration / 1000, 0.001);
-      const minSeedVelocity = 12;
-      const seedMultiplier = 0.08;
-      const data = this.targets.map((el, i) =>
-        ({
-          el,
-          entries: this._perTarget[i].map(e => {
-            let velocity = e.velocity;
-            if (Math.abs(velocity) < 0.5) {
-              const projected = (e.to - e.from) / durationSec;
-              if (projected !== 0) {
-                velocity = Math.sign(projected) * Math.max(Math.abs(projected) * seedMultiplier, minSeedVelocity);
-              }
-            }
-            return { ...e, velocity };
-          }),
-        })
-      );
-
-      let lastNow = performance.now();
-      const step = now => {
-        const dtSec = Math.max((now - lastNow) / 1000, 1 / 120);
-        lastNow = now;
-        const frameDecay = Math.pow(decay, dtSec / (1 / 60));
-        let any = false;
-        for (const d of data) {
-          for (const e of d.entries) {
-            if (e.kind === 'complex') continue;
-            if (Math.abs(e.velocity) < 2) { e.velocity = 0; continue; }
-            any = true;
-            e.current += e.velocity * dtSec;
-            e.velocity *= frameDecay;
-            _setProp(d.el, e.prop, e.current, e.unit);
-          }
-          _flushEl(d.el);
-        }
-        if (any) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
     }
 
     play() { this.paused = false; this._done = false; _ticker.add(this._tickBound); return this; }
@@ -589,6 +542,8 @@
       this.start = opts.start || 'top 80%';
       this.end = opts.end || 'bottom 20%';
       this.scrub = opts.scrub != null ? opts.scrub : false;
+      this.scrubSmooth = Number.isFinite(opts.scrubSmooth) ? clamp(opts.scrubSmooth, 0, 1) : 0;
+      this.scrubMaxStep = Number.isFinite(opts.scrubMaxStep) ? Math.max(opts.scrubMaxStep, 0) : null;
       this.markers = opts.markers || false;
       this.onEnter = opts.onEnter || null;
       this.onLeave = opts.onLeave || null;
@@ -597,6 +552,8 @@
 
       this._active = false;
       this._progress = 0;
+      this._targetProgress = 0;
+      this._scrubRaf = null;
       if (this.tween) this.tween.pause();
       if (this.markers) this._createMarkers();
       this._listen();
@@ -617,6 +574,40 @@
       return parseFloat(s) || 0;
     }
 
+    _emitUpdate(progress) {
+      if (this.onUpdate) this.onUpdate({ progress, targetProgress: this._targetProgress, isActive: this._active });
+    }
+
+    _setScrubProgress(progress) {
+      const clamped = clamp(progress, 0, 1);
+      if (this.tween) this.tween.progress(clamped);
+      this._progress = clamped;
+      this._emitUpdate(clamped);
+    }
+
+    _startScrubLoop() {
+      if (this._scrubRaf) return;
+      const tick = () => {
+        const delta = this._targetProgress - this._progress;
+        if (Math.abs(delta) <= 0.0005) {
+          this._scrubRaf = null;
+          if (this._progress !== this._targetProgress) this._setScrubProgress(this._targetProgress);
+          return;
+        }
+
+        let nextStep = delta * this.scrubSmooth;
+        if (this.scrubMaxStep != null && this.scrubMaxStep > 0) {
+          nextStep = clamp(nextStep, -this.scrubMaxStep, this.scrubMaxStep);
+        }
+        if (Math.abs(nextStep) < 0.0005) nextStep = delta > 0 ? 0.0005 : -0.0005;
+        if (Math.abs(nextStep) > Math.abs(delta)) nextStep = delta;
+
+        this._setScrubProgress(this._progress + nextStep);
+        this._scrubRaf = requestAnimationFrame(tick);
+      };
+      this._scrubRaf = requestAnimationFrame(tick);
+    }
+
     _listen() {
       let ticking = false;
       const update = () => {
@@ -631,12 +622,17 @@
         const progress = range !== 0 ? clamp(-sOff / range, 0, 1) : 0;
         const was = this._active;
         this._active = progress > 0 && progress < 1;
+        this._targetProgress = progress;
 
-        if (this.scrub && this.tween) this.tween.progress(progress);
+        if (this.scrub && this.tween) {
+          if (this.scrubSmooth > 0) this._startScrubLoop();
+          else this._setScrubProgress(progress);
+        } else {
+          this._progress = progress;
+          this._emitUpdate(progress);
+        }
         if (!was && this._active && progress < .5 && this.onEnter) this.onEnter();
         if (was && !this._active && progress >= 1 && this.onLeave) this.onLeave();
-        if (this.onUpdate) this.onUpdate({ progress, isActive: this._active });
-        this._progress = progress;
         if (this.markers) {
           this._sm.style.top = this._vp(sp[1] || '80%', vh) + 'px';
           this._em.style.top = this._vp(ep[1] || '20%', vh) + 'px';
@@ -655,6 +651,7 @@
 
     kill() {
       window.removeEventListener('scroll', this._handler);
+      if (this._scrubRaf) cancelAnimationFrame(this._scrubRaf);
       if (this._sm) this._sm.remove();
       if (this._em) this._em.remove();
     }
@@ -836,6 +833,63 @@
     return magnitude;
   }
 
+  const _attrBindings = new WeakMap();
+  let _attrResponsiveMode = null;
+  let _attrInitQueued = false;
+
+  function _responsiveMode() {
+    const width = window.innerWidth || document.documentElement.clientWidth || 0;
+    if (width <= DEFAULT_MOBILE_BREAKPOINT) return 'mobile';
+    if (width <= DEFAULT_TABLET_BREAKPOINT) return 'tablet';
+    return 'desktop';
+  }
+
+  function _restoreTargets(targets, states) {
+    if (!targets || !states) return;
+    targets.forEach((target, index) => {
+      const state = states[index];
+      if (!state) return;
+      for (const [prop, value] of Object.entries(state)) {
+        const normalizedProp = normalizePropName(prop);
+        if (normalizedProp === CLIP_PATH_PROP) {
+          _setProp(target, normalizedProp, String(value).trim());
+          continue;
+        }
+        const parsed = parseValue(value);
+        const numericValue = typeof parsed.value === 'number' ? parsed.value : 0;
+        _setProp(target, normalizedProp, numericValue, parsed.unit || UNIT_DEFAULTS[normalizedProp] || '');
+      }
+      _flushEl(target);
+    });
+  }
+
+  function _killAttrBinding(el) {
+    const binding = _attrBindings.get(el);
+    if (!binding) return;
+    binding.kill();
+    _attrBindings.delete(el);
+  }
+
+  function _setAttrBinding(el, cleanups) {
+    _killAttrBinding(el);
+    _attrBindings.set(el, {
+      kill() {
+        cleanups.forEach(cleanup => {
+          try { cleanup(); } catch (_) {}
+        });
+      }
+    });
+  }
+
+  function _queueAttrInit() {
+    if (_attrInitQueued) return;
+    _attrInitQueued = true;
+    requestAnimationFrame(() => {
+      _attrInitQueued = false;
+      _initFromAttributes();
+    });
+  }
+
   function _initMouseTrigger(targets, props, triggerEl, opts = {}) {
     const follow = opts.animateOnce || false;
     const moveEase = 0.18;
@@ -923,19 +977,39 @@
 
     triggerEl.addEventListener('mousemove', onMove);
     triggerEl.addEventListener('mouseleave', onLeave);
+    return {
+      kill() {
+        clearIdleReset();
+        if (rafId) cancelAnimationFrame(rafId);
+        triggerEl.removeEventListener('mousemove', onMove);
+        triggerEl.removeEventListener('mouseleave', onLeave);
+      }
+    };
   }
 
   function _parse(el) {
-    const a = el.attributes, p = {};
+    const a = el.attributes, pBase = {}, pTablet = {}, pMobile = {};
     let trigger = null, triggerTarget = null, easing = null, dur = null, delay = null;
     let stagger = false, staggerDelay = 0.1, split = null, mask = false;
-    let inertia = false, inertiaDecay = 0.92;
-    let scrubStart = null, scrubEnd = null, repeat = 0, yoyo = false, threshold = null;
+    let scrubStart = null, scrubEnd = null, scrubSmooth = null, scrubMaxStep = null;
+    let repeat = 0, yoyo = false, threshold = null;
     let animateOnce = false;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
 
     for (let i = 0; i < a.length; i++) {
       const n = a[i].name, v = a[i].value;
-      if (n.startsWith('data-glm-prop-'))         p[normalizePropName(n.slice(14))] = v;
+      if (n.startsWith('data-glm-prop-')) {
+        let propName = n.slice(14);
+        let bucket = pBase;
+        if (propName.endsWith('-tablet')) {
+          propName = propName.slice(0, -7);
+          bucket = pTablet;
+        } else if (propName.endsWith('-mobile')) {
+          propName = propName.slice(0, -7);
+          bucket = pMobile;
+        }
+        bucket[normalizePropName(propName)] = v;
+      }
       else if (n === 'data-glm-trigger-view')      { trigger = 'view'; if (v) triggerTarget = v; }
       else if (n === 'data-glm-trigger-scroll')    { trigger = 'scroll'; if (v) triggerTarget = v; }
       else if (n === 'data-glm-trigger-click')     { trigger = 'click'; if (v) triggerTarget = v; }
@@ -948,16 +1022,20 @@
       else if (n === 'data-glm-stagger-delay')     staggerDelay = parseFloat(v);
       else if (n === 'data-glm-split')             split = v || 'chars';
       else if (n === 'data-glm-mask')              mask = v === '' || v === 'true' || v === '1';
-      else if (n === 'data-glm-inertia')           { inertia = true; if (v) inertiaDecay = parseFloat(v); }
       else if (n === 'data-glm-scrub-start')       scrubStart = v;
       else if (n === 'data-glm-scrub-end')         scrubEnd = v;
+      else if (n === 'data-glm-scrub-smooth')      scrubSmooth = (v === '' || v === 'true' || v === '1') ? 0.12 : parseFloat(v);
+      else if (n === 'data-glm-scrub-max-step')    scrubMaxStep = parseFloat(v);
       else if (n === 'data-glm-repeat')            repeat = v === 'infinite' ? -1 : parseInt(v);
       else if (n === 'data-glm-yoyo')              yoyo = true;
       else if (n === 'data-glm-threshold')         threshold = parseFloat(v);
       else if (n === 'data-glm-animate-once')      animateOnce = v === '' || v === 'true' || v === '1';
     }
+    const p = { ...pBase };
+    if (viewportWidth <= DEFAULT_TABLET_BREAKPOINT) Object.assign(p, pTablet);
+    if (viewportWidth <= DEFAULT_MOBILE_BREAKPOINT) Object.assign(p, pMobile);
     return { p, trigger, triggerTarget, easing, dur, delay, stagger, staggerDelay,
-             split, mask, inertia, inertiaDecay, scrubStart, scrubEnd, repeat, yoyo, threshold, animateOnce };
+             split, mask, scrubStart, scrubEnd, scrubSmooth, scrubMaxStep, repeat, yoyo, threshold, animateOnce };
   }
 
   function _rm(threshold) {
@@ -973,11 +1051,14 @@
     all.forEach(el => {
       if (done.has(el)) return;
       done.add(el);
+      _killAttrBinding(el);
 
       const d = _parse(el);
       const { p, trigger, triggerTarget, easing, dur, delay,
-              stagger, staggerDelay, split, mask, inertia, inertiaDecay,
-              scrubStart, scrubEnd, repeat, yoyo, threshold, animateOnce } = d;
+              stagger, staggerDelay, split, mask,
+              scrubStart, scrubEnd, scrubSmooth, scrubMaxStep, repeat, yoyo, threshold, animateOnce } = d;
+      const cleanups = [];
+      const bind = () => _setAttrBinding(el, cleanups);
 
       const isReveal = trigger === 'view' || trigger === 'scroll';
       const isInteractive = trigger === 'hover' || trigger === 'click' || trigger === 'mouse';
@@ -986,66 +1067,101 @@
       // TEXT SPLIT
       if (split) {
         const sp = new TextSplit(el, { type: split, mask });
+        cleanups.push(() => sp.revert());
         const targets = split === 'lines' ? sp.lines : split === 'words' ? sp.words : sp.chars;
         if (Object.keys(p).length && targets.length) {
+          const initialStates = targets.map(target => _snapshotProps(target, p));
           _applyFrom(targets, p);
           const end = _naturalEndProps(p);
           const inOpts = {
             duration: dur != null ? dur : DEFAULT_DURATION, delay: delay != null ? delay : 0,
             ease: easing, stagger: staggerDelay,
-            paused: true, inertia, inertiaDecay,
+            paused: true,
           };
           const tw = new Tween(targets, end, inOpts);
+          cleanups.push(() => tw.kill());
           if (trigger === 'scroll') {
-            new ScrollTrigger({ trigger: el, start: scrubStart || 'top 85%', end: scrubEnd || 'bottom 20%', scrub: true, animation: tw });
+            const st = new ScrollTrigger({
+              trigger: el,
+              start: scrubStart || 'top 85%',
+              end: scrubEnd || 'bottom 20%',
+              scrub: true,
+              scrubSmooth,
+              scrubMaxStep,
+              animation: tw
+            });
+            cleanups.push(() => st.kill());
           } else {
             if (animateOnce) {
-              new Observer(el, { type: 'view', once: true, rootMargin, onEnter: () => tw.restart() });
+              const observer = new Observer(el, { type: 'view', once: true, rootMargin, onEnter: () => tw.restart() });
+              cleanups.push(() => observer.kill());
             } else {
               const twOut = new Tween(targets, p, { ...inOpts, delay: 0, paused: true });
               const stop = () => { tw.kill(); twOut.kill(); };
-              new Observer(el, {
+              cleanups.push(() => { stop(); _restoreTargets(targets, initialStates); });
+              const observer = new Observer(el, {
                 type: 'view',
                 once: false,
                 rootMargin,
                 onEnter: () => { stop(); tw.restart(); },
                 onLeave: () => { stop(); twOut.restart(); },
               });
+              cleanups.push(() => observer.kill());
             }
           }
         }
+        bind();
         return;
       }
 
       let targets = [el];
       if (stagger) targets = Array.from(el.children);
-      if (!Object.keys(p).length) return;
+      if (!Object.keys(p).length) {
+        bind();
+        return;
+      }
 
       if (isReveal) {
+        const initialStates = targets.map(target => _snapshotProps(target, p));
         _applyFrom(targets, p);
         const end = _naturalEndProps(p);
         const inOpts = {
           duration: dur != null ? dur : DEFAULT_DURATION, delay: delay != null ? delay : 0,
           ease: easing, stagger: stagger ? staggerDelay : 0,
-          paused: true, inertia, inertiaDecay, repeat, yoyo,
+          paused: true, repeat, yoyo,
         };
         const tw = new Tween(targets, end, inOpts);
+        cleanups.push(() => tw.kill());
         const tEl = triggerTarget ? document.querySelector(triggerTarget) : el;
         if (trigger === 'scroll') {
-          new ScrollTrigger({ trigger: tEl || el, start: scrubStart || 'top 85%', end: scrubEnd || 'bottom 20%', scrub: true, animation: tw });
+          const st = new ScrollTrigger({
+            trigger: tEl || el,
+            start: scrubStart || 'top 85%',
+            end: scrubEnd || 'bottom 20%',
+            scrub: true,
+            scrubSmooth,
+            scrubMaxStep,
+            animation: tw
+          });
+          cleanups.push(() => st.kill());
+          cleanups.push(() => _restoreTargets(targets, initialStates));
         } else {
           if (animateOnce) {
-            new Observer(tEl || el, { type: 'view', once: true, rootMargin, onEnter: () => tw.restart() });
+            const observer = new Observer(tEl || el, { type: 'view', once: true, rootMargin, onEnter: () => tw.restart() });
+            cleanups.push(() => observer.kill());
+            cleanups.push(() => _restoreTargets(targets, initialStates));
           } else {
             const twOut = new Tween(targets, p, { ...inOpts, delay: 0, paused: true });
             const stop = () => { tw.kill(); twOut.kill(); };
-            new Observer(tEl || el, {
+            cleanups.push(() => { stop(); _restoreTargets(targets, initialStates); });
+            const observer = new Observer(tEl || el, {
               type: 'view',
               once: false,
               rootMargin,
               onEnter: () => { stop(); tw.restart(); },
               onLeave: () => { stop(); twOut.restart(); },
             });
+            cleanups.push(() => observer.kill());
           }
         }
       } else if (isInteractive) {
@@ -1054,20 +1170,30 @@
           delay: delay != null ? delay : 0,
           ease: easing,
           paused: true,
-          inertia,
-          inertiaDecay,
           repeat,
           yoyo,
         };
         const tEl = triggerTarget ? document.querySelector(triggerTarget) : el;
         if (trigger === 'click') {
+          const initialStates = targets.map(target => _snapshotProps(target, p));
           const tw = new Tween(targets, p, {
             ...baseOpts,
             stagger: stagger ? staggerDelay : 0,
           });
-          (tEl || el).addEventListener('click', () => tw.restart());
+          const onClick = () => tw.restart();
+          (tEl || el).addEventListener('click', onClick);
+          cleanups.push(() => {
+            (tEl || el).removeEventListener('click', onClick);
+            tw.kill();
+            _restoreTargets(targets, initialStates);
+          });
         } else if (trigger === 'mouse') {
-          _initMouseTrigger(targets, p, tEl || el, { animateOnce });
+          const initialStates = targets.map(target => _snapshotProps(target, p));
+          const mouseController = _initMouseTrigger(targets, p, tEl || el, { animateOnce });
+          cleanups.push(() => {
+            mouseController.kill();
+            _restoreTargets(targets, initialStates);
+          });
         } else {
           const initialStates = targets.map(target => _snapshotProps(target, p));
           let activeTweens = [];
@@ -1083,16 +1209,26 @@
             }));
             activeTweens.forEach(tw => tw.play());
           };
-          (tEl || el).addEventListener('mouseenter', () => run(() => p));
-          (tEl || el).addEventListener('mouseleave', () => run(index => initialStates[index]));
+          const onEnter = () => run(() => p);
+          const onLeave = () => run(index => initialStates[index]);
+          (tEl || el).addEventListener('mouseenter', onEnter);
+          (tEl || el).addEventListener('mouseleave', onLeave);
+          cleanups.push(() => {
+            (tEl || el).removeEventListener('mouseenter', onEnter);
+            (tEl || el).removeEventListener('mouseleave', onLeave);
+            stop();
+            _restoreTargets(targets, initialStates);
+          });
         }
       } else {
-        new Tween(targets, p, {
+        const tw = new Tween(targets, p, {
           duration: dur != null ? dur : DEFAULT_DURATION, delay: delay != null ? delay : 0,
           ease: easing, stagger: stagger ? staggerDelay : 0,
-          inertia, inertiaDecay, repeat, yoyo,
+          repeat, yoyo,
         });
+        cleanups.push(() => tw.kill());
       }
+      bind();
     });
   }
 
@@ -1111,9 +1247,18 @@
 
   // ─── AUTO-INIT ────────────────────────────────────────────────
   if (typeof document !== 'undefined') {
-    const run = () => requestAnimationFrame(_initFromAttributes);
+    const run = () => {
+      _attrResponsiveMode = _responsiveMode();
+      _queueAttrInit();
+    };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
     else run();
+    window.addEventListener('resize', () => {
+      const nextMode = _responsiveMode();
+      if (nextMode === _attrResponsiveMode) return;
+      _attrResponsiveMode = nextMode;
+      _queueAttrInit();
+    });
   }
 
   // ─── PUBLIC API ───────────────────────────────────────────────
