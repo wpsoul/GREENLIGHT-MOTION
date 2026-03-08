@@ -781,6 +781,32 @@ a { color: var(--accent); text-decoration: none; }
   flex-shrink: 0;
 }
 .attr-box.teal { background: var(--accent2); }
+.to-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.to-mode-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: rgba(255,255,255,0.02);
+}
+.to-mode-label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+@media (max-width: 768px) {
+  .to-mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ─── API SECTION ───────────────────────────── */
 .api-grid {
@@ -1703,6 +1729,15 @@ a { color: var(--accent); text-decoration: none; }
   <span class="kw">data-glm-duration</span>=<span class="str">"0.8"</span>
 &gt;
 
+<span class="cm">&lt;!-- Treat attribute props as .to() values instead of .from() --&gt;</span>
+&lt;div
+  <span class="kw">data-glm-trigger-view</span>
+  <span class="kw">data-glm-to</span>
+  <span class="kw">data-glm-prop-translateY</span>=<span class="str">"50px"</span>
+  <span class="kw">data-glm-prop-opacity</span>=<span class="str">"0.4"</span>
+  <span class="kw">data-glm-duration</span>=<span class="str">"0.8"</span>
+&gt;
+
 <span class="cm">&lt;!-- Scroll-scrub with blur filter --&gt;</span>
 &lt;div
   <span class="kw">data-glm-trigger-scroll</span>
@@ -1804,6 +1839,32 @@ a { color: var(--accent); text-decoration: none; }
   <span class="kw">data-glm-prop-scale</span>=<span class="str">"1.5"</span>
   <span class="kw">data-glm-easing</span>=<span class="str">"elastic.out"</span>
 &gt;
+  </div>
+
+  <div class="to-mode-grid">
+    <div class="to-mode-card">
+      <span class="to-mode-label">Default attribute mode = from</span>
+      <div class="demo-area" style="height:140px;">
+        <div class="box"
+             data-glm-trigger-view
+             data-glm-prop-translateY="50px"
+             data-glm-prop-opacity="0"
+             data-glm-easing="power3.out"
+             data-glm-duration="0.8"></div>
+      </div>
+    </div>
+    <div class="to-mode-card">
+      <span class="to-mode-label">`data-glm-to` = to</span>
+      <div class="demo-area" style="height:140px;">
+        <div class="box teal"
+             data-glm-trigger-view
+             data-glm-to
+             data-glm-prop-translateY="-50px"
+             data-glm-prop-opacity="0.35"
+             data-glm-easing="power3.out"
+             data-glm-duration="0.8"></div>
+      </div>
+    </div>
   </div>
 </section>
 

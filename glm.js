@@ -993,7 +993,7 @@
     let stagger = false, staggerDelay = 0.1, split = null, mask = false;
     let scrubStart = null, scrubEnd = null, scrubSmooth = null, scrubMaxStep = null;
     let repeat = 0, yoyo = false, threshold = null;
-    let animateOnce = false;
+    let animateOnce = false, toMode = false;
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
 
     for (let i = 0; i < a.length; i++) {
@@ -1030,12 +1030,13 @@
       else if (n === 'data-glm-yoyo')              yoyo = true;
       else if (n === 'data-glm-threshold')         threshold = parseFloat(v);
       else if (n === 'data-glm-animate-once')      animateOnce = v === '' || v === 'true' || v === '1';
+      else if (n === 'data-glm-to')                toMode = v === '' || v === 'true' || v === '1';
     }
     const p = { ...pBase };
     if (viewportWidth <= DEFAULT_TABLET_BREAKPOINT) Object.assign(p, pTablet);
     if (viewportWidth <= DEFAULT_MOBILE_BREAKPOINT) Object.assign(p, pMobile);
     return { p, trigger, triggerTarget, easing, dur, delay, stagger, staggerDelay,
-             split, mask, scrubStart, scrubEnd, scrubSmooth, scrubMaxStep, repeat, yoyo, threshold, animateOnce };
+             split, mask, scrubStart, scrubEnd, scrubSmooth, scrubMaxStep, repeat, yoyo, threshold, animateOnce, toMode };
   }
 
   function _rm(threshold) {
@@ -1056,7 +1057,7 @@
       const d = _parse(el);
       const { p, trigger, triggerTarget, easing, dur, delay,
               stagger, staggerDelay, split, mask,
-              scrubStart, scrubEnd, scrubSmooth, scrubMaxStep, repeat, yoyo, threshold, animateOnce } = d;
+              scrubStart, scrubEnd, scrubSmooth, scrubMaxStep, repeat, yoyo, threshold, animateOnce, toMode } = d;
       const cleanups = [];
       const bind = () => _setAttrBinding(el, cleanups);
 
@@ -1071,8 +1072,8 @@
         const targets = split === 'lines' ? sp.lines : split === 'words' ? sp.words : sp.chars;
         if (Object.keys(p).length && targets.length) {
           const initialStates = targets.map(target => _snapshotProps(target, p));
-          _applyFrom(targets, p);
-          const end = _naturalEndProps(p);
+          if (!toMode) _applyFrom(targets, p);
+          const end = toMode ? p : _naturalEndProps(p);
           const inOpts = {
             duration: dur != null ? dur : DEFAULT_DURATION, delay: delay != null ? delay : 0,
             ease: easing, stagger: staggerDelay,
@@ -1096,15 +1097,33 @@
               const observer = new Observer(el, { type: 'view', once: true, rootMargin, onEnter: () => tw.restart() });
               cleanups.push(() => observer.kill());
             } else {
-              const twOut = new Tween(targets, p, { ...inOpts, delay: 0, paused: true });
-              const stop = () => { tw.kill(); twOut.kill(); };
+              let outTweens = [];
+              const stop = () => {
+                tw.kill();
+                outTweens.forEach(outTween => outTween.kill());
+                outTweens = [];
+              };
+              const playOut = () => {
+                stop();
+                if (toMode) {
+                  outTweens = targets.map((target, index) => new Tween(target, initialStates[index], {
+                    ...inOpts,
+                    delay: staggerDelay * index,
+                  }));
+                  outTweens.forEach(outTween => outTween.play());
+                } else {
+                  const twOut = new Tween(targets, p, { ...inOpts, delay: 0, paused: true });
+                  outTweens = [twOut];
+                  twOut.restart();
+                }
+              };
               cleanups.push(() => { stop(); _restoreTargets(targets, initialStates); });
               const observer = new Observer(el, {
                 type: 'view',
                 once: false,
                 rootMargin,
                 onEnter: () => { stop(); tw.restart(); },
-                onLeave: () => { stop(); twOut.restart(); },
+                onLeave: playOut,
               });
               cleanups.push(() => observer.kill());
             }
@@ -1123,8 +1142,8 @@
 
       if (isReveal) {
         const initialStates = targets.map(target => _snapshotProps(target, p));
-        _applyFrom(targets, p);
-        const end = _naturalEndProps(p);
+        if (!toMode) _applyFrom(targets, p);
+        const end = toMode ? p : _naturalEndProps(p);
         const inOpts = {
           duration: dur != null ? dur : DEFAULT_DURATION, delay: delay != null ? delay : 0,
           ease: easing, stagger: stagger ? staggerDelay : 0,
@@ -1151,15 +1170,33 @@
             cleanups.push(() => observer.kill());
             cleanups.push(() => _restoreTargets(targets, initialStates));
           } else {
-            const twOut = new Tween(targets, p, { ...inOpts, delay: 0, paused: true });
-            const stop = () => { tw.kill(); twOut.kill(); };
+            let outTweens = [];
+            const stop = () => {
+              tw.kill();
+              outTweens.forEach(outTween => outTween.kill());
+              outTweens = [];
+            };
+            const playOut = () => {
+              stop();
+              if (toMode) {
+                outTweens = targets.map((target, index) => new Tween(target, initialStates[index], {
+                  ...inOpts,
+                  delay: stagger ? staggerDelay * index : 0,
+                }));
+                outTweens.forEach(outTween => outTween.play());
+              } else {
+                const twOut = new Tween(targets, p, { ...inOpts, delay: 0, paused: true });
+                outTweens = [twOut];
+                twOut.restart();
+              }
+            };
             cleanups.push(() => { stop(); _restoreTargets(targets, initialStates); });
             const observer = new Observer(tEl || el, {
               type: 'view',
               once: false,
               rootMargin,
               onEnter: () => { stop(); tw.restart(); },
-              onLeave: () => { stop(); twOut.restart(); },
+              onLeave: playOut,
             });
             cleanups.push(() => observer.kill());
           }

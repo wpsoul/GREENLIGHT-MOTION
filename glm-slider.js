@@ -215,9 +215,20 @@
       return hasLooping ? normalizeLoopValue(position) : clampPosition(position);
     }
 
+    function updateSliderPoints(renderedPosition) {
+      const vpWidth = viewport.clientWidth;
+      for (let i = 0; i < renderedItems.length; i++) {
+        const itemLeft = i * slideStride - renderedPosition;
+        const itemCenter = itemLeft + itemWidth * 0.5;
+        const point = vpWidth > 0 ? itemCenter / vpWidth : 0;
+        renderedItems[i].style.setProperty('--glm-slider-point', point);
+      }
+    }
+
     function render() {
       const renderedPosition = getRenderedPosition();
       track.style.transform = `translate3d(${-renderedPosition}px, 0, 0)`;
+      updateSliderPoints(renderedPosition);
     }
 
     function stopFrame() {
