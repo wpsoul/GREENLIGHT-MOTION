@@ -807,6 +807,21 @@ a { color: var(--accent); text-decoration: none; }
     grid-template-columns: 1fr;
   }
 }
+.glm-class-rise {
+  --glm-trigger-view: true;
+  --glm-prop-translateY: 50px;
+  --glm-prop-opacity: 0;
+  --glm-easing: power3.out;
+  --glm-duration: 0.8;
+}
+.glm-class-soft-target {
+  --glm-trigger-view: true;
+  --glm-to: true;
+  --glm-prop-translateY: -42px;
+  --glm-prop-opacity: 0.35;
+  --glm-easing: power2.out;
+  --glm-duration: 0.8;
+}
 
 /* ─── API SECTION ───────────────────────────── */
 .api-grid {
@@ -1711,7 +1726,7 @@ a { color: var(--accent); text-decoration: none; }
      data-glm-duration="0.8"
      data-glm-delay="0.3">
     Add data attributes to any HTML element.
-    GLM auto-inits the animation engine on page load.
+    GLM auto-inits the animation engine on page load, and can also read matching `--glm-*` variables from `.glm-class-*` CSS classes.
   </p>
 
   <div class="code-block"
@@ -1737,6 +1752,15 @@ a { color: var(--accent); text-decoration: none; }
   <span class="kw">data-glm-prop-opacity</span>=<span class="str">"0.4"</span>
   <span class="kw">data-glm-duration</span>=<span class="str">"0.8"</span>
 &gt;
+
+<span class="cm">&lt;!-- CSS class-driven config via --glm-* variables --&gt;</span>
+<span class="cm">.glm-class-rise {</span>
+<span class="cm">  --glm-trigger-view: true;</span>
+<span class="cm">  --glm-prop-translateY: 50px;</span>
+<span class="cm">  --glm-prop-opacity: 0;</span>
+<span class="cm">  --glm-duration: 0.8;</span>
+<span class="cm">}</span>
+&lt;div <span class="kw">class</span>=<span class="str">"glm-class-rise"</span>&gt;
 
 <span class="cm">&lt;!-- Scroll-scrub with blur filter --&gt;</span>
 &lt;div
@@ -1863,6 +1887,18 @@ a { color: var(--accent); text-decoration: none; }
              data-glm-prop-opacity="0.35"
              data-glm-easing="power3.out"
              data-glm-duration="0.8"></div>
+      </div>
+    </div>
+    <div class="to-mode-card">
+      <span class="to-mode-label">`.glm-class-*` reads `--glm-*` from CSS</span>
+      <div class="demo-area" style="height:140px;">
+        <div class="box glm-class-rise"></div>
+      </div>
+    </div>
+    <div class="to-mode-card">
+      <span class="to-mode-label">Class config can also opt into `to` mode</span>
+      <div class="demo-area" style="height:140px;">
+        <div class="box teal glm-class-soft-target"></div>
       </div>
     </div>
   </div>

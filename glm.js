@@ -987,6 +987,56 @@
     };
   }
 
+  let _glmClassCustomProps = [];
+
+  function _stripQuotedValue(value) {
+    const str = String(value).trim();
+    if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith('\'') && str.endsWith('\''))) {
+      return str.slice(1, -1).trim();
+    }
+    return str;
+  }
+
+  function _isTruthySetting(value) {
+    const normalized = _stripQuotedValue(value).toLowerCase();
+    return normalized === '' || normalized === 'true' || normalized === '1';
+  }
+
+  function _resolveTriggerTarget(value) {
+    const normalized = _stripQuotedValue(value);
+    return _isTruthySetting(normalized) ? null : normalized;
+  }
+
+  function _collectGLMClassCustomProperties() {
+    const props = new Set();
+
+    const walkRules = rules => {
+      if (!rules) return;
+      for (let i = 0; i < rules.length; i++) {
+        const rule = rules[i];
+        if (!rule) continue;
+        if (rule.style && rule.selectorText && /\.glm-class-[A-Za-z0-9_-]+/.test(rule.selectorText)) {
+          for (let j = 0; j < rule.style.length; j++) {
+            const propName = rule.style[j];
+            if (propName && propName.startsWith('--glm-')) props.add(propName);
+          }
+        }
+        if (rule.cssRules) {
+          walkRules(rule.cssRules);
+        }
+      }
+    };
+
+    for (let i = 0; i < document.styleSheets.length; i++) {
+      const sheet = document.styleSheets[i];
+      try {
+        walkRules(sheet.cssRules);
+      } catch (_) {}
+    }
+
+    return Array.from(props);
+  }
+
   function _parse(el) {
     const a = el.attributes, pBase = {}, pTablet = {}, pMobile = {};
     let trigger = null, triggerTarget = null, easing = null, dur = null, delay = null;
@@ -996,8 +1046,25 @@
     let animateOnce = false, toMode = false;
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
 
+    const entries = [];
+    const hasGLMClass = el.classList && Array.from(el.classList).some(cls => cls.startsWith('glm-class-'));
+    if (hasGLMClass && _glmClassCustomProps.length) {
+      const computed = getComputedStyle(el);
+      _glmClassCustomProps.forEach(propName => {
+        const rawValue = computed.getPropertyValue(propName);
+        if (!rawValue || !rawValue.trim()) return;
+        entries.push({
+          name: `data-${propName.slice(2)}`,
+          value: _stripQuotedValue(rawValue),
+        });
+      });
+    }
     for (let i = 0; i < a.length; i++) {
-      const n = a[i].name, v = a[i].value;
+      entries.push({ name: a[i].name, value: a[i].value });
+    }
+
+    for (let i = 0; i < entries.length; i++) {
+      const n = entries[i].name, v = entries[i].value;
       if (n.startsWith('data-glm-prop-')) {
         let propName = n.slice(14);
         let bucket = pBase;
@@ -1010,11 +1077,11 @@
         }
         bucket[normalizePropName(propName)] = v;
       }
-      else if (n === 'data-glm-trigger-view')      { trigger = 'view'; if (v) triggerTarget = v; }
-      else if (n === 'data-glm-trigger-scroll')    { trigger = 'scroll'; if (v) triggerTarget = v; }
-      else if (n === 'data-glm-trigger-click')     { trigger = 'click'; if (v) triggerTarget = v; }
-      else if (n === 'data-glm-trigger-hover')     { trigger = 'hover'; if (v) triggerTarget = v; }
-      else if (n === 'data-glm-trigger-mouse')     { trigger = 'mouse'; if (v) triggerTarget = v; }
+      else if (n === 'data-glm-trigger-view')      { trigger = 'view'; const target = _resolveTriggerTarget(v); if (target) triggerTarget = target; }
+      else if (n === 'data-glm-trigger-scroll')    { trigger = 'scroll'; const target = _resolveTriggerTarget(v); if (target) triggerTarget = target; }
+      else if (n === 'data-glm-trigger-click')     { trigger = 'click'; const target = _resolveTriggerTarget(v); if (target) triggerTarget = target; }
+      else if (n === 'data-glm-trigger-hover')     { trigger = 'hover'; const target = _resolveTriggerTarget(v); if (target) triggerTarget = target; }
+      else if (n === 'data-glm-trigger-mouse')     { trigger = 'mouse'; const target = _resolveTriggerTarget(v); if (target) triggerTarget = target; }
       else if (n === 'data-glm-easing')            easing = v;
       else if (n === 'data-glm-duration')          dur = parseFloat(v);
       else if (n === 'data-glm-delay')             delay = parseFloat(v);
@@ -1029,8 +1096,8 @@
       else if (n === 'data-glm-repeat')            repeat = v === 'infinite' ? -1 : parseInt(v);
       else if (n === 'data-glm-yoyo')              yoyo = true;
       else if (n === 'data-glm-threshold')         threshold = parseFloat(v);
-      else if (n === 'data-glm-animate-once')      animateOnce = v === '' || v === 'true' || v === '1';
-      else if (n === 'data-glm-to')                toMode = v === '' || v === 'true' || v === '1';
+      else if (n === 'data-glm-animate-once')      animateOnce = _isTruthySetting(v);
+      else if (n === 'data-glm-to')                toMode = _isTruthySetting(v);
     }
     const p = { ...pBase };
     if (viewportWidth <= DEFAULT_TABLET_BREAKPOINT) Object.assign(p, pTablet);
@@ -1045,7 +1112,8 @@
   }
 
   function _initFromAttributes() {
-    const sel = '[data-glm-trigger-view],[data-glm-trigger-scroll],[data-glm-trigger-click],[data-glm-trigger-hover],[data-glm-trigger-mouse],[data-glm-split]';
+    _glmClassCustomProps = _collectGLMClassCustomProperties();
+    const sel = '[class*="glm-class-"],[data-glm-trigger-view],[data-glm-trigger-scroll],[data-glm-trigger-click],[data-glm-trigger-hover],[data-glm-trigger-mouse],[data-glm-split]';
     const all = document.querySelectorAll(sel);
     const done = new Set();
 
